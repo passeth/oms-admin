@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+:root {
+  /* Reference Style: Soft Gradient Background */
+  --background-start: #e0f2fe; /* Light Blue */
+  --background-middle: #ffffff; /* White */
+  --background-end: #fff7ed; /* Light Orange/Yellow */
+  
+  --foreground: #000000;
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  /* Mesh Gradient-like effect */
+  background: linear-gradient(135deg, var(--background-start) 0%, var(--background-middle) 40%, var(--background-end) 100%);
+  background-attachment: fixed; /* Keep gradient fixed on scroll */
+  color: var(--foreground);
+  font-family: 'Inter', Arial, Helvetica, sans-serif; /* Prefer Inter if available */
+  min-height: 100vh;
+}
+
+/* Global Card Config */
+.card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 0.75rem; /* rounded-xl */
+}
+
+/* Typography Overrides for High Contrast */
+h1, h2, h3, h4, h5, h6 {
+    color: #000000 !important;
+    letter-spacing: -0.025em; /* tight */
+}
