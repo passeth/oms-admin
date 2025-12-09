@@ -7,13 +7,15 @@ export const dynamic = 'force-dynamic'
 export default async function ProductsPage({
     searchParams,
 }: {
-    searchParams: Promise<{ page?: string, search?: string }>
+    searchParams: Promise<{ page?: string, search?: string, sort?: string, order?: string }>
 }) {
     const params = await searchParams
     const page = Number(params.page) || 1
     const search = params.search || ''
+    const sort = params.sort || 'created_at'
+    const order = params.order || 'desc'
 
-    const { data, count, error } = await getErpProducts(page, 50, search)
+    const { data, count, error } = await getErpProducts(page, 500, search, sort, order)
 
     if (error) {
         return <div>Error loading products: {error}</div>
@@ -32,6 +34,8 @@ export default async function ProductsPage({
                 initialData={data || []}
                 totalCount={count || 0}
                 currentPage={page}
+                currentSort={sort}
+                currentOrder={order}
             />
         </div>
     )

@@ -2,69 +2,293 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { PromoRule, RawOrderLine } from '@/types/database'
 
-// 1. Fetch Pending Rules (Step 3: List Promotions matching Order Date)
-export async function getPendingRules() {
+// --- Types ---
+export interface PromoTargetGroup {
+    rule_id: number
+    rule_name: string
+    platform_name: string
+    receiver_addr: string
+    receiver_name: string
+    receiver_phone: string
+    total_qty: number
+    order_ids: number[] // IDs of orders in this group
+    items: { 
+        product_name: string
+        qty: number
+        matched_kit_id: string
+        site_product_code: string 
+    }[] // Summary of items
+    is_qualified: boolean
+    gift_kit_id: string // Default gift, can be overridden
+    gift_qty: number
+}
+
+// Helper to parse "2025-12-03 오후 7:05:00"
+function parseKoreanDate(dateStr: string | null): Date {
+    if (!dateStr) return new Date()
+    
+    // Check if it's already ISO
+    if (dateStr.includes('T')) return new Date(dateStr)
+    
+    try {
+        // Format: YYYY-MM-DD (오전/오후) H:mm:ss
+        // Remove spaces and split
+        const parts = dateStr.trim().split(' ')
+        if (parts.length < 3) return new Date(dateStr) // Fallback
+
+        const datePart = parts[0] // 2025-12-03
+        const ampm = parts[1] // 오전 or 오후
+        const timePart = parts[2] // 7:05:00
+
+        let [hours, minutes, seconds] = timePart.split(':').map(Number)
+        
+        if (ampm === '오후' && hours < 12) hours += 12
+        if (ampm === '오전' && hours === 12) hours = 0
+
+        const isoStr = `${datePart}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds ? seconds.toString().padStart(2, '0') : '00'}`
+        return new Date(isoStr)
+    } catch (e) {
+        console.error('Error parsing Korean date:', dateStr, e)
+        return new Date() // Fallback to now
+    }
+}
+
+// 1. Get Candidate Promotions
+// Returns promotions that are active during the period of "New Orders"
+export async function getCandidatePromotions() {
     const supabase = await createClient()
-    const { data, error } = await supabase.rpc('fn_fetch_pending_rules_v2')
+    
+    // A. Get date range of unprocessed orders
+    const { data: orders, error: orderError } = await supabase
+        .from('cm_raw_order_lines')
+        .select('paid_at')
+        .is('process_status', null)
+        .order('paid_at', { ascending: true })
+    
+    if (orderError || !orders || orders.length === 0) return []
 
-    if (error) {
-        console.error('Pending Rules Error:', error)
+    let minDateStr = ''
+    let maxDateStr = ''
+
+    try {
+        // Normalize: Take the date part only (YYYY-MM-DD)
+        const minRaw = parseKoreanDate(orders[0].paid_at)
+        const maxRaw = parseKoreanDate(orders[orders.length - 1].paid_at)
+
+        if (isNaN(minRaw.getTime()) || isNaN(maxRaw.getTime())) {
+            console.error('Invalid date found in orders:', orders[0], orders[orders.length - 1])
+            return []
+        }
+
+        const toLocalISO = (d: Date) => {
+            const offset = d.getTimezoneOffset() * 60000
+            return new Date(d.getTime() - offset).toISOString().split('T')[0]
+        }
+
+        minDateStr = toLocalISO(minRaw)
+        maxDateStr = toLocalISO(maxRaw)
+    } catch (e) {
+        console.error('Date parsing error:', e)
         return []
     }
-    return data
-}
 
-// 2. Apply Promotion (Step 4-6: Generate Drafts)
-export async function applyPromotion(ruleId: number) {
-    const supabase = await createClient()
-    const { data, error } = await supabase.rpc('fn_apply_promo_logic_v2', { p_rule_id: ruleId })
+    // B. Find overlapping promotions
+    const { data: rules, error: ruleError } = await supabase
+        .from('cm_promo_rules')
+        .select('*')
+        .lte('start_date', maxDateStr)
+        .gte('end_date', minDateStr)
+        .order('created_at', { ascending: false })
 
-    if (error) {
-        console.error('Apply Promo Error:', error)
-        return { success: false, error: error.message }
+    if (ruleError) {
+        console.error('Error fetching rules:', ruleError)
+        return []
     }
-    revalidatePath('/promotions/apply')
-    return { success: true, count: (data as any)?.inserted_count || 0 }
+
+    return rules as PromoRule[]
 }
 
-// 3. Fetch Generated Drafts (Review)
-export async function getGiftDrafts() {
+// 2. Calculate Targets for Promotions
+// Core Logic:
+// 1. Fetch Orders in Global Date Range of passed rules
+// 2. Iterate each rule -> find matching orders
+// 3. Matching Priority: strict matching (site_product_code IN target_kit_ids)
+export async function calculateAllTargets(rules: PromoRule[]) {
+    const supabase = await createClient()
+
+    if (rules.length === 0) return []
+
+    // A. Determine Global Date Range
+    // To fetch efficient batch of orders
+    const startDates = rules.map(r => r.start_date).sort()
+    const endDates = rules.map(r => r.end_date).sort()
+
+    const minDateStr = startDates[0]
+    const maxDateStr = endDates[endDates.length - 1]
+
+    // B. Fetch All Candidates
+    // Include site_product_code in selection
+    const { data: orders, error: orderError } = await supabase
+        .from('cm_raw_order_lines')
+        .select('*')
+        .is('process_status', null)
+        .gte('paid_at', minDateStr) 
+        .lte('paid_at', maxDateStr + ' 23:59:59') // Include full end day
+        .order('paid_at', { ascending: true })
+
+    if (orderError) throw new Error('Error fetching orders: ' + orderError.message)
+    if (!orders || orders.length === 0) return []
+
+    // C. Match & Group
+    const allTargets: PromoTargetGroup[] = []
+
+    for (const rule of rules) {
+        const targetKits = rule.target_kit_ids || (rule.target_kit_id ? [rule.target_kit_id] : [])
+        if (targetKits.length === 0) continue
+
+        // Filter orders for this rule
+        const ruleOrders = orders.filter(order => {
+            // 1. Date Check
+            const orderDateStr = order.paid_at.substring(0, 10) // YYYY-MM-DD
+            if (orderDateStr < rule.start_date || orderDateStr > rule.end_date) return false
+
+            // 2. Product Match (Strict: site_product_code)
+            // The rule's target_kit_ids contains the list of valid site_product_codes
+            if (!order.site_product_code) return false
+            
+            // Allow string comparison (trim spaces)
+            return targetKits.some((code: string) => 
+                order.site_product_code.trim() === code.trim()
+            )
+        })
+
+        if (ruleOrders.length === 0) continue
+
+        // Group by Address
+        const groups: Record<string, PromoTargetGroup> = {}
+
+        for (const order of ruleOrders) {
+            const addrKey = (order.receiver_addr || 'UNKNOWN').trim()
+            
+            if (!groups[addrKey]) {
+                groups[addrKey] = {
+                    rule_id: rule.rule_id,
+                    rule_name: rule.promo_name,
+                    platform_name: rule.platform_name || 'Unknown',
+                    receiver_addr: addrKey,
+                    receiver_name: order.receiver_name || '',
+                    receiver_phone: order.receiver_phone1 || '',
+                    total_qty: 0,
+                    order_ids: [],
+                    items: [],
+                    is_qualified: false,
+                    gift_kit_id: rule.gift_kit_id, // Default
+                    gift_qty: 0
+                }
+            }
+
+            const group = groups[addrKey]
+            group.total_qty += (order.qty || 0)
+            group.order_ids.push(order.id)
+            group.items.push({
+                product_name: order.product_name || '',
+                qty: order.qty || 0,
+                matched_kit_id: order.matched_kit_id || '',
+                site_product_code: order.site_product_code || ''
+            })
+        }
+
+        // Filter Qualified Groups
+        const qualified = Object.values(groups).filter(g => {
+            if (g.total_qty >= rule.condition_qty) {
+                g.is_qualified = true
+                
+                if (rule.promo_type === 'Q_BASED') {
+                     const multiples = Math.floor(g.total_qty / rule.condition_qty)
+                     g.gift_qty = multiples * rule.gift_qty
+                } else {
+                     g.gift_qty = g.total_qty * rule.gift_qty
+                }
+                return true
+            }
+            return false
+        })
+
+        allTargets.push(...qualified)
+    }
+
+    return allTargets
+}
+
+// 3. Apply Gifts (Updated types)
+export async function applyGiftToTargets(
+    targets: { rule_id: number, order_ids: number[], gift_kit_id: string, gift_qty: number, receiver_name: string, receiver_phone: string, receiver_addr: string }[]
+) {
+    const supabase = await createClient()
+    
+    if (targets.length === 0) return { success: true, count: 0 }
+
+    const giftInserts = targets.map(t => ({
+        rule_id: t.rule_id,
+        gift_kit_id: t.gift_kit_id,
+        gift_qty: t.gift_qty, // Fixed: qty -> gift_qty
+        receiver_name: t.receiver_name,
+        receiver_phone: t.receiver_phone,
+        receiver_addr: t.receiver_addr,
+        source_order_ids: t.order_ids,
+        is_confirmed: true,
+        created_at: new Date().toISOString()
+    }))
+
+    // ... (rest same as before, just ensuring loop works)
+    const { error: insertError } = await supabase
+        .from('cm_order_gifts')
+        .insert(giftInserts)
+
+    if (insertError) return { success: false, error: insertError.message }
+
+    const allOrderIds = targets.flatMap(t => t.order_ids)
+    const { error: updateError } = await supabase
+        .from('cm_raw_order_lines')
+        .update({ process_status: 'GIFT_APPLIED' } as any)
+        .in('id', allOrderIds)
+
+    if (updateError) return { success: false, error: 'Gifts created but failed to update order status: ' + updateError.message }
+
+    revalidatePath('/promotions/apply')
+    return { success: true, count: targets.length }
+}
+
+// 4. Search Gift Kits
+export async function searchGiftKits(query: string) {
     const supabase = await createClient()
     const { data } = await supabase
-        .from('cm_order_gifts')
-        .select(`
-            *,
-            rule:cm_promo_rules(promo_name),
-            order:cm_raw_order_lines!fk_cm_order_gifts_order_line(receiver_name, site_order_no, product_name)
-        `)
-        .eq('is_confirmed', false)
-        .order('created_at', { ascending: false })
-    return data || []
+        .from('cm_raw_mapping_rules')
+        .select('kit_id')
+        .ilike('kit_id', `%${query}%`)
+        .order('kit_id') // Added order
+    
+    // Create unique list
+    const unique = Array.from(new Set(data?.map(d => d.kit_id) || []))
+    return unique
 }
 
-// 4. Confirm Drafts
-export async function confirmGiftDrafts(giftIds: number[]) {
+// 5. Debug Stats (Unchanged)
+export async function getOrderStats() {
     const supabase = await createClient()
-    // Re-use existing confirm logic as it just updates status
-    const { data, error } = await supabase.rpc('fn_confirm_gift_drafts', { p_gift_ids: giftIds })
-    if (error) return { success: false, error: error.message }
+    const { data: orders, error } = await supabase
+        .from('cm_raw_order_lines')
+        .select('paid_at')
+        .is('process_status', null)
+        .order('paid_at', { ascending: true })
 
-    revalidatePath('/promotions/apply')
-    return { success: true }
-}
+    if (error || !orders) return { count: 0, min: null, max: null, error: error?.message }
 
-// 5. Clear All Drafts
-export async function clearDrafts() {
-    const supabase = await createClient()
-    await supabase.from('cm_order_gifts').delete().eq('is_confirmed', false)
-    revalidatePath('/promotions/apply')
-    return { success: true }
-}
-
-// 6. Delete Single Draft
-export async function deleteDraft(id: number) {
-    const supabase = await createClient()
-    await supabase.from('cm_order_gifts').delete().eq('id', id)
-    revalidatePath('/promotions/apply')
+    return {
+        count: orders.length,
+        min: orders[0]?.paid_at,
+        max: orders[orders.length - 1]?.paid_at
+    }
 }

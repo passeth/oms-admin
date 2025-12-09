@@ -86,8 +86,9 @@ export interface ErpProduct {
     product_id: string; // PK
     name: string;
     spec: string | null;
-    brand: string | null;
+    bal_qty: number | null; // Added
     created_at: string | null;
+    updated_at: string | null;
 }
 
 // E. Kit BOM (Master Data)
