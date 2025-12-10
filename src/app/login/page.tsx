@@ -1,4 +1,4 @@
-import { login, signup } from './actions'
+import { login } from './actions'
 
 export default async function LoginPage({
     searchParams,
@@ -18,7 +18,7 @@ export default async function LoginPage({
             <div className="z-10 w-full max-w-md space-y-8 rounded-2xl bg-white/5 p-10 shadow-2xl backdrop-blur-xl border border-white/10">
                 <div className="text-center">
                     <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                        OMS ADMIN
+                        EVAS Commerce OMS
                     </h1>
                     <p className="mt-2 text-sm text-gray-400">
                         Order Management System
@@ -71,14 +71,6 @@ export default async function LoginPage({
                         >
                             Sign in
                         </button>
-
-                        <button
-                            formAction={signup}
-                            className="mt-2 w-full text-xs text-gray-500 hover:text-gray-300 transition-colors"
-                        >
-                            Sign up
-                        </button>
-
                     </div>
                 </form>
             </div>

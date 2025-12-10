@@ -9,7 +9,9 @@ import {
     Download,
     Settings,
     LogOut,
-    PackageCheck
+    PackageCheck,
+    Truck,
+    HelpCircle
 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -17,14 +19,21 @@ import { clsx } from 'clsx'
 
 const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'Orders (Transaction)', href: '/orders', icon: AlertCircle },
+
+    // 1. Core Workflow
+    { name: 'Promotion Rules', href: '/promotions', icon: Gift },
     { name: 'Process New Orders', href: '/orders/process', icon: PackageCheck },
-    { name: 'Products (ERP)', href: '/inventory/products', icon: Settings },
-    { name: 'BOM Kits', href: '/inventory/boms', icon: Settings },
-    { name: 'Mappings', href: '/inventory/mappings', icon: Settings },
-    { name: 'Promotions', href: '/promotions', icon: Gift },
     { name: 'Apply Gifts', href: '/promotions/apply', icon: Gift },
-    { name: 'Export', href: '/export', icon: Download },
+    { name: 'All Orders', href: '/orders', icon: AlertCircle },
+
+    // 2. Inventory & Config
+    { name: 'BOM Kits', href: '/inventory/boms', icon: Settings },
+    { name: 'Products (ERP)', href: '/inventory/products', icon: Settings },
+    { name: 'Mappings', href: '/inventory/mappings', icon: Settings },
+
+    // 3. Output
+    { name: 'Dispatch Summary', href: '/orders/dispatch', icon: Truck },
+    { name: 'User Guide', href: '/guide', icon: HelpCircle },
 ]
 
 export default function Sidebar() {
@@ -41,7 +50,7 @@ export default function Sidebar() {
     return (
         <div className="flex h-full w-64 flex-col bg-white/50 backdrop-blur-xl border-r border-white/20 shadow-sm">
             <div className="flex h-16 items-center px-6 font-black text-2xl tracking-tighter text-black">
-                Aetherfield
+                EVAS Commerce
             </div>
             <div className="flex-1 flex flex-col gap-1 px-3 py-4">
                 {navigation.map((item) => {
