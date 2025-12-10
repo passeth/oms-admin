@@ -1,3 +1,4 @@
+// Force rebuild for Vercel
 import { login } from './actions'
 
 export default async function LoginPage({
