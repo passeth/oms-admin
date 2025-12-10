@@ -494,10 +494,18 @@ function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: Pr
                                 <select
                                     className="w-full p-2 border rounded bg-white"
                                     value={formData.promo_type}
-                                    onChange={e => setFormData({ ...formData, promo_type: e.target.value as any })}
+                                    onChange={e => {
+                                        const type = e.target.value as any
+                                        setFormData({
+                                            ...formData,
+                                            promo_type: type,
+                                            gift_qty: type === 'PRICE_ONLY' ? 0 : (formData.gift_qty === 0 ? 1 : formData.gift_qty)
+                                        })
+                                    }}
                                 >
                                     <option value="Q_BASED">Buy N Get M (Quantity)</option>
-                                    <option value="ALL_GIFT">1:1 All Gift</option>
+                                    <option value="ALL_GIFT">1:1 All Gift (Legacy)</option>
+                                    <option value="PRICE_ONLY">Price Discount Only (No Gift)</option>
                                 </select>
                             </div>
                             <div>
@@ -513,8 +521,9 @@ function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: Pr
                                 <label className="text-xs font-bold text-slate-500 uppercase">Gift Amount (M)</label>
                                 <input
                                     type="number"
-                                    className="w-full p-2 border rounded bg-white"
-                                    value={formData.gift_qty || 1}
+                                    className={`w-full p-2 border rounded ${formData.promo_type === 'PRICE_ONLY' ? 'bg-slate-100 text-slate-400' : 'bg-white'}`}
+                                    value={formData.gift_qty || 0}
+                                    disabled={formData.promo_type === 'PRICE_ONLY'}
                                     onChange={e => setFormData({ ...formData, gift_qty: parseInt(e.target.value) })}
                                 />
                             </div>

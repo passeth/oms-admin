@@ -20,9 +20,11 @@ export function SearchableGiftSelect({ value, onChange, placeholder = "Search Gi
     const [loading, setLoading] = useState(false)
     const wrapperRef = useRef<HTMLDivElement>(null)
 
-    // Sync external value changes
+    // Sync external value changes, but only if it's different to avoid overriding typing
     useEffect(() => {
-        setQuery(value)
+        if (value !== query) {
+            setQuery(value)
+        }
     }, [value])
 
     // Close on click outside
@@ -39,7 +41,7 @@ export function SearchableGiftSelect({ value, onChange, placeholder = "Search Gi
     const handleSearch = async (text: string) => {
         setQuery(text)
         onChange(text) // Allow free text input
-        
+
         if (text.length < 2) {
             setSuggestions([])
             setIsOpen(false)
@@ -92,11 +94,11 @@ export function SearchableGiftSelect({ value, onChange, placeholder = "Search Gi
                     ))}
                 </div>
             )}
-            
+
             {isOpen && query.length >= 2 && suggestions.length === 0 && !loading && (
-                 <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg p-2 text-xs text-slate-400 text-center">
+                <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg p-2 text-xs text-slate-400 text-center">
                     No results found
-                 </div>
+                </div>
             )}
         </div>
     )

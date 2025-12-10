@@ -1,0 +1,130 @@
+'use client'
+
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Download, Loader2, CheckCircle } from 'lucide-react'
+import * as XLSX from 'xlsx'
+import { exportOrdersForExcel, finalizeProcessedOrders } from '@/app/(dashboard)/orders/process/actions'
+
+export function ExcelDownloader() {
+    const [loading, setLoading] = useState(false)
+    const [finished, setFinished] = useState(false)
+
+    const handleDownload = async () => {
+        setLoading(true)
+        try {
+            // 1. Fetch Data
+            const orders = await exportOrdersForExcel()
+            if (orders.length === 0) {
+                alert('No orders to export.')
+                setLoading(false)
+                return
+            }
+
+            // 2. Prepare Excel
+            const excludedFields = ['id', 'upload_date', 'is_processed', 'process_status', 'created_at', 'updated_at']
+
+            // Define the exact desired column order
+            // "option_text" and "matched_kit_id" are swapped positions relative to standard
+            const fieldOrder = [
+                'order_unique_code',
+                'platform_name',
+                'seller_id',
+                'collector_id',
+                'collected_at',
+                'paid_at',
+                'status_changed_at',
+                'status',
+                'site_order_no',
+                'site_product_code',
+                'product_name',
+                'matched_kit_id', // Swapped: Placed here instead of option_text
+                'qty',
+                'total_qty_bundled',
+                'add_option',
+                'promo_text',
+                'ship_method_reason',
+                'receiver_name',
+                'receiver_zip',
+                'receiver_addr',
+                'receiver_phone1',
+                'receiver_phone2',
+                'ship_msg',
+                'tracking_no',
+                'master_product_code',
+                'ordered_at',
+                'option_text' // Swapped: Placed at the end (or where matched_kit_id naturally was)
+            ]
+
+            const cleanOrders = orders.map((order: any) => {
+                const newOrder: any = {}
+
+                // 1. Add fields in specified order
+                fieldOrder.forEach(field => {
+                    newOrder[field] = order[field]
+                })
+
+                // 2. Add any remaining fields that are in 'order' but not in 'fieldOrder' or 'excludedFields'
+                Object.keys(order).forEach(key => {
+                    if (!fieldOrder.includes(key) && !excludedFields.includes(key)) {
+                        newOrder[key] = order[key]
+                    }
+                })
+
+                return newOrder
+            })
+
+            const ws = XLSX.utils.json_to_sheet(cleanOrders)
+            const wb = XLSX.utils.book_new()
+            XLSX.utils.book_append_sheet(wb, ws, "Processed_Orders")
+
+            // 3. Download
+            const fileName = `Orders_Output_${new Date().toISOString().slice(0, 10)}.xlsx`
+            XLSX.writeFile(wb, fileName)
+
+            // 4. Finalize (Ask user?)
+            if (confirm(`Downloaded ${orders.length} orders.\nMark them as DONE?`)) {
+                const ids = orders.map(o => o.id)
+                const res = await finalizeProcessedOrders(ids)
+                if (res.success) {
+                    setFinished(true)
+                    // Reset after 3 seconds
+                    setTimeout(() => setFinished(false), 3000)
+                } else {
+                    alert('Failed to update status: ' + res.error)
+                }
+            }
+
+        } catch (e: any) {
+            console.error(e)
+            alert('Export failed: ' + e.message)
+        } finally {
+            setLoading(false)
+            // setFinished(false) handled above
+        }
+    }
+
+    return (
+        <div className="flex flex-col items-center justify-center p-6 border rounded-xl bg-slate-50 border-slate-200 shadow-sm h-full">
+            <div className="text-center space-y-4">
+                <div className="bg-green-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto text-green-600">
+                    {finished ? <CheckCircle className="w-8 h-8" /> : <Download className="w-8 h-8" />}
+                </div>
+
+                <h3 className="text-lg font-bold text-slate-700">Download Final Excel</h3>
+                <p className="text-sm text-slate-500">
+                    Export processed orders and mark as done.
+                </p>
+
+                <Button
+                    onClick={handleDownload}
+                    disabled={loading}
+                    className="w-full bg-green-600 hover:bg-green-700 font-bold"
+                >
+                    {loading ? <Loader2 className="animate-spin mr-2" /> : <Download className="mr-2 w-4 h-4" />}
+                    {loading ? 'Exporting...' : 'Download & Finalize'}
+                </Button>
+            </div>
+        </div>
+    )
+}

@@ -11,7 +11,7 @@
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
     "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.87.0",
+    "@supabase/supabase-js": "^2.87.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -26,10 +26,12 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.15.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.0.7",
+    "pg": "^8.16.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

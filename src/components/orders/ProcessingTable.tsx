@@ -235,13 +235,28 @@ export function ProcessingTable({
 
     // --- 5. SORTING & UNMATCHED FILTER STATES (Sync with URL already, but handlers needed) ---
     const unmatchedOnly = searchParams.get('unmatched') === 'true'
+    const giftOnly = searchParams.get('gift') === 'true'
     const currentSort = searchParams.get('sort') || 'id'
     const currentOrder = searchParams.get('order') || 'asc'
 
     const toggleUnmatched = () => {
         const params = new URLSearchParams(searchParams.toString())
         if (unmatchedOnly) params.delete('unmatched')
-        else params.set('unmatched', 'true')
+        else {
+            params.set('unmatched', 'true')
+            params.delete('gift') // Mute other filter
+        }
+        params.set('page', '1')
+        router.push(`/orders/process?${params.toString()}`)
+    }
+
+    const toggleGift = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        if (giftOnly) params.delete('gift')
+        else {
+            params.set('gift', 'true')
+            params.delete('unmatched') // Mute other filter
+        }
         params.set('page', '1')
         router.push(`/orders/process?${params.toString()}`)
     }
@@ -276,7 +291,7 @@ export function ProcessingTable({
             {/* ... (Header and Filters) ... */}
             <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-black tracking-tighter text-black">New Order Processing</h1>
+                    <h1 className="text-2xl font-black tracking-tighter text-black">New Order Processing <span className="text-slate-400 font-medium">({totalCount})</span></h1>
                     <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">Action Required</span>
                 </div>
                 <p className="text-sm text-slate-500">
@@ -324,6 +339,13 @@ export function ProcessingTable({
                     className={`px-4 py-2 rounded-lg font-bold border transition-colors ${unmatchedOnly ? 'bg-red-600 border-red-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-200'}`}
                 >
                     {unmatchedOnly ? 'Showing Unmatched' : 'Show Unmatched Only'}
+                </button>
+
+                <button
+                    onClick={toggleGift}
+                    className={`px-4 py-2 rounded-lg font-bold border transition-colors ${giftOnly ? 'bg-purple-600 border-purple-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:text-purple-600 hover:border-purple-200'}`}
+                >
+                    {giftOnly ? 'Showing Gifts' : 'Show Gifts Only'}
                 </button>
 
                 <button onClick={applyFilters} className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-medium h-[42px]">

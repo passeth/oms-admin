@@ -2,6 +2,7 @@ import { getLatestUploadOrders } from './actions'
 import { getDistinctPlatforms } from '@/app/(dashboard)/orders/actions'
 import { ProcessingTable } from '@/components/orders/ProcessingTable'
 import { OrderUploader } from '@/components/dashboard/OrderUploader'
+import { ExcelDownloader } from '@/components/orders/ExcelDownloader'
 
 // Next.js 15+ searchParams is a Promise
 type SearchParams = Promise<{ [key: string]: string | undefined }>
@@ -17,6 +18,7 @@ export default async function OrderProcessPage(props: {
     const sortField = searchParams.sort || 'id'
     const sortOrder = (searchParams.order as 'asc' | 'desc') || 'asc'
     const unmatchedOnly = searchParams.unmatched === 'true'
+    const giftOnly = searchParams.gift === 'true'
 
     // Fetch Data
     const { orders, count, uploadDate } = await getLatestUploadOrders(
@@ -26,7 +28,8 @@ export default async function OrderProcessPage(props: {
         platform,
         sortField,
         sortOrder,
-        unmatchedOnly
+        unmatchedOnly,
+        giftOnly
     )
 
     // Fetch Platforms for Filter
@@ -34,10 +37,20 @@ export default async function OrderProcessPage(props: {
 
     return (
         <div className="p-6 space-y-6">
-            {/* Upload Section */}
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <h2 className="text-lg font-bold mb-4">Upload New Orders</h2>
-                <OrderUploader />
+            {/* Top Section: Upload & Download */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 1. Uploader */}
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full flex flex-col">
+                    <h2 className="text-lg font-bold mb-4">Upload New Orders</h2>
+                    <div className="flex-1 min-h-0">
+                        <OrderUploader compact />
+                    </div>
+                </div>
+
+                {/* 2. Downloader (Finalize) */}
+                <div className="bg-white rounded-xl shadow-sm h-full">
+                    <ExcelDownloader />
+                </div>
             </div>
 
             <ProcessingTable

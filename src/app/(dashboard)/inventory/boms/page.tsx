@@ -5,7 +5,7 @@ import { BomList } from '@/components/inventory/BomList'
 export const dynamic = 'force-dynamic'
 
 export default async function BomPage() {
-    const { data, products, error } = await getBomItems()
+    const { data, products, missingKits, error } = await getBomItems()
 
     if (error) {
         return <div>Error loading BOMs: {error}</div>
@@ -24,6 +24,7 @@ export default async function BomPage() {
                 <BomList
                     initialItems={data || []}
                     products={products || []}
+                    missingKits={missingKits || []}
                 />
             </div>
         </div>

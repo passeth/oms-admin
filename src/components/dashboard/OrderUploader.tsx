@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { Upload, FileSpreadsheet, Loader2, Check, AlertCircle } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { createClient } from '@/utils/supabase/client'
 import { RawOrderLine } from '@/types/database'
 
 export function OrderUploader() {
+    const router = useRouter()
     const [isDragging, setIsDragging] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
@@ -53,7 +55,7 @@ export function OrderUploader() {
             // For now, checks for '주문번호' or 'site_order_no'
 
             // Reduce batch size to avoid timeout
-            const batchSize = 100
+            const batchSize = 25
             const rowsToInsert: any[] = []
 
             // Mapping Logic (User specific)
@@ -153,6 +155,9 @@ export function OrderUploader() {
 
             setStatus('success')
             setMessage(`Successfully uploaded ${insertedCount} orders (Checked ${jsonData.length} rows).`)
+
+            // Refresh the page data
+            router.refresh()
 
         } catch (err: any) {
             console.error(err)

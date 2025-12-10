@@ -14,11 +14,11 @@ export interface PromoTargetGroup {
     receiver_phone: string
     total_qty: number
     order_ids: number[] // IDs of orders in this group
-    items: { 
+    items: {
         product_name: string
         qty: number
         matched_kit_id: string
-        site_product_code: string 
+        site_product_code: string
     }[] // Summary of items
     is_qualified: boolean
     gift_kit_id: string // Default gift, can be overridden
@@ -28,10 +28,10 @@ export interface PromoTargetGroup {
 // Helper to parse "2025-12-03 오후 7:05:00"
 function parseKoreanDate(dateStr: string | null): Date {
     if (!dateStr) return new Date()
-    
+
     // Check if it's already ISO
     if (dateStr.includes('T')) return new Date(dateStr)
-    
+
     try {
         // Format: YYYY-MM-DD (오전/오후) H:mm:ss
         // Remove spaces and split
@@ -43,7 +43,7 @@ function parseKoreanDate(dateStr: string | null): Date {
         const timePart = parts[2] // 7:05:00
 
         let [hours, minutes, seconds] = timePart.split(':').map(Number)
-        
+
         if (ampm === '오후' && hours < 12) hours += 12
         if (ampm === '오전' && hours === 12) hours = 0
 
@@ -59,14 +59,14 @@ function parseKoreanDate(dateStr: string | null): Date {
 // Returns promotions that are active during the period of "New Orders"
 export async function getCandidatePromotions() {
     const supabase = await createClient()
-    
+
     // A. Get date range of unprocessed orders
     const { data: orders, error: orderError } = await supabase
         .from('cm_raw_order_lines')
         .select('paid_at')
         .is('process_status', null)
         .order('paid_at', { ascending: true })
-    
+
     if (orderError || !orders || orders.length === 0) return []
 
     let minDateStr = ''
@@ -100,6 +100,7 @@ export async function getCandidatePromotions() {
         .select('*')
         .lte('start_date', maxDateStr)
         .gte('end_date', minDateStr)
+        .eq('promo_type', 'Q_BASED')
         .order('created_at', { ascending: false })
 
     if (ruleError) {
@@ -134,7 +135,7 @@ export async function calculateAllTargets(rules: PromoRule[]) {
         .from('cm_raw_order_lines')
         .select('*')
         .is('process_status', null)
-        .gte('paid_at', minDateStr) 
+        .gte('paid_at', minDateStr)
         .lte('paid_at', maxDateStr + ' 23:59:59') // Include full end day
         .order('paid_at', { ascending: true })
 
@@ -149,7 +150,7 @@ export async function calculateAllTargets(rules: PromoRule[]) {
         if (targetKits.length === 0) continue
 
         // Filter orders for this rule
-        const ruleOrders = orders.filter(order => {
+        const ruleOrders = orders.filter((order: any) => {
             // 1. Date Check
             const orderDateStr = order.paid_at.substring(0, 10) // YYYY-MM-DD
             if (orderDateStr < rule.start_date || orderDateStr > rule.end_date) return false
@@ -157,9 +158,9 @@ export async function calculateAllTargets(rules: PromoRule[]) {
             // 2. Product Match (Strict: site_product_code)
             // The rule's target_kit_ids contains the list of valid site_product_codes
             if (!order.site_product_code) return false
-            
+
             // Allow string comparison (trim spaces)
-            return targetKits.some((code: string) => 
+            return targetKits.some((code: string) =>
                 order.site_product_code.trim() === code.trim()
             )
         })
@@ -171,7 +172,7 @@ export async function calculateAllTargets(rules: PromoRule[]) {
 
         for (const order of ruleOrders) {
             const addrKey = (order.receiver_addr || 'UNKNOWN').trim()
-            
+
             if (!groups[addrKey]) {
                 groups[addrKey] = {
                     rule_id: rule.rule_id,
@@ -204,12 +205,12 @@ export async function calculateAllTargets(rules: PromoRule[]) {
         const qualified = Object.values(groups).filter(g => {
             if (g.total_qty >= rule.condition_qty) {
                 g.is_qualified = true
-                
+
                 if (rule.promo_type === 'Q_BASED') {
-                     const multiples = Math.floor(g.total_qty / rule.condition_qty)
-                     g.gift_qty = multiples * rule.gift_qty
+                    const multiples = Math.floor(g.total_qty / rule.condition_qty)
+                    g.gift_qty = multiples * rule.gift_qty
                 } else {
-                     g.gift_qty = g.total_qty * rule.gift_qty
+                    g.gift_qty = g.total_qty * rule.gift_qty
                 }
                 return true
             }
@@ -222,43 +223,115 @@ export async function calculateAllTargets(rules: PromoRule[]) {
     return allTargets
 }
 
-// 3. Apply Gifts (Updated types)
+// 3. Apply Gifts (Updated: Save History + Create Orders + Batched Processing)
+// 3. Apply Gifts (Updated: Create Orders First -> Save History -> Update Status)
 export async function applyGiftToTargets(
-    targets: { rule_id: number, order_ids: number[], gift_kit_id: string, gift_qty: number, receiver_name: string, receiver_phone: string, receiver_addr: string }[]
+    targets: {
+        applied_rule_id: number, order_ids: number[], gift_kit_id: string, gift_qty: number,
+        receiver_name: string, receiver_phone: string, receiver_phone2?: string, receiver_addr: string, receiver_zip?: string,
+        platform_name: string
+    }[]
 ) {
     const supabase = await createClient()
-    
+
     if (targets.length === 0) return { success: true, count: 0 }
 
-    const giftInserts = targets.map(t => ({
-        rule_id: t.rule_id,
-        gift_kit_id: t.gift_kit_id,
-        gift_qty: t.gift_qty, // Fixed: qty -> gift_qty
-        receiver_name: t.receiver_name,
-        receiver_phone: t.receiver_phone,
-        receiver_addr: t.receiver_addr,
-        source_order_ids: t.order_ids,
-        is_confirmed: true,
-        created_at: new Date().toISOString()
-    }))
+    const BATCH_SIZE = 5 // Keep conservative batch size
+    const UPDATE_BATCH_SIZE = 50
 
-    // ... (rest same as before, just ensuring loop works)
-    const { error: insertError } = await supabase
-        .from('cm_order_gifts')
-        .insert(giftInserts)
+    try {
+        const allSourceIds: number[] = []
 
-    if (insertError) return { success: false, error: insertError.message }
+        // Process in batches
+        for (let i = 0; i < targets.length; i += BATCH_SIZE) {
+            const batchTargets = targets.slice(i, i + BATCH_SIZE)
 
-    const allOrderIds = targets.flatMap(t => t.order_ids)
-    const { error: updateError } = await supabase
-        .from('cm_raw_order_lines')
-        .update({ process_status: 'GIFT_APPLIED' } as any)
-        .in('id', allOrderIds)
+            // 1. Prepare & Create Orders
+            const orderInserts = batchTargets.map(t => ({
+                site_order_no: `GIFT-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+                platform_name: t.platform_name || 'Unknown',
+                receiver_name: t.receiver_name,
+                receiver_phone1: t.receiver_phone,
+                receiver_phone2: t.receiver_phone2 || '',
+                receiver_addr: t.receiver_addr,
+                receiver_zip: t.receiver_zip || '',
+                product_name: t.gift_kit_id,
+                option_text: `*증정_${t.gift_kit_id}`,
+                qty: t.gift_qty,
+                matched_kit_id: t.gift_kit_id,
+                process_status: null,
+                upload_date: new Date().toISOString()
+            }))
 
-    if (updateError) return { success: false, error: 'Gifts created but failed to update order status: ' + updateError.message }
+            // Insert matching orders and get IDs
+            const { data: createdOrders, error: orderError } = await supabase
+                .from('cm_raw_order_lines')
+                .insert(orderInserts)
+                .select('id')
 
-    revalidatePath('/promotions/apply')
-    return { success: true, count: targets.length }
+            if (orderError || !createdOrders) {
+                console.error(`Error creating gift orders batch ${i}:`, orderError)
+                throw new Error('Failed to create gift orders: ' + orderError?.message)
+            }
+
+            // 2. Create History (Linked to created orders)
+            // Assuming index alignment matches (standard in Postgres bulk insert returning)
+            const giftInserts = batchTargets.map((t, idx) => ({
+                applied_rule_id: t.applied_rule_id,
+                gift_kit_id: t.gift_kit_id,
+                gift_qty: t.gift_qty,
+                platform_name: t.platform_name || 'Unknown',
+                receiver_name: t.receiver_name,
+                receiver_phone: t.receiver_phone,
+                receiver_phone2: t.receiver_phone2 || '',
+                receiver_addr: t.receiver_addr,
+                receiver_zip: t.receiver_zip || '',
+                source_order_ids: t.order_ids,
+                is_confirmed: true,
+                created_at: new Date().toISOString(),
+                generated_order_id: createdOrders[idx]?.id // Link here!
+            }))
+
+            const { error: historyError } = await supabase
+                .from('cm_order_gifts')
+                .insert(giftInserts)
+
+            if (historyError) {
+                console.error(`Error inserting gift history batch ${i}:`, historyError)
+                // Note: Orders were created but history failed. Using throwing error to stop process.
+                throw new Error('Orders created but failed to save history: ' + historyError.message)
+            }
+
+            // Collect source IDs for update
+            batchTargets.forEach(t => allSourceIds.push(...t.order_ids))
+
+            // Delay for safety
+            await new Promise(resolve => setTimeout(resolve, 200))
+        }
+
+        // 3. Mark Source Orders as Processed - Batched
+        const uniqueSourceIds = Array.from(new Set(allSourceIds))
+        if (uniqueSourceIds.length > 0) {
+            for (let i = 0; i < uniqueSourceIds.length; i += UPDATE_BATCH_SIZE) {
+                const batch = uniqueSourceIds.slice(i, i + UPDATE_BATCH_SIZE)
+                const { error } = await supabase
+                    .from('cm_raw_order_lines')
+                    .update({ process_status: 'GIFT_APPLIED' } as any)
+                    .in('id', batch)
+
+                if (error) {
+                    console.error('Warning: Failed to update source order status batch', i, error)
+                }
+            }
+        }
+
+        revalidatePath('/promotions/apply')
+        revalidatePath('/orders')
+        return { success: true, count: targets.length }
+
+    } catch (e: any) {
+        return { success: false, error: e.message }
+    }
 }
 
 // 4. Search Gift Kits
@@ -269,9 +342,9 @@ export async function searchGiftKits(query: string) {
         .select('kit_id')
         .ilike('kit_id', `%${query}%`)
         .order('kit_id') // Added order
-    
+
     // Create unique list
-    const unique = Array.from(new Set(data?.map(d => d.kit_id) || []))
+    const unique = Array.from(new Set(data?.map((d: any) => d.kit_id) || []))
     return unique
 }
 

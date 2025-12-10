@@ -104,9 +104,60 @@ export async function updateOrder(id: number, updates: Partial<RawOrderLine>) {
     return { success: true }
 }
 
+// Helper to Revert Gift Logic
+async function revertGiftStatus(supabase: any, orderIds: number[]) {
+    // 1. Find if any of these are Gift Orders
+    const { data: gifts, error } = await supabase
+        .from('cm_order_gifts')
+        .select('generated_order_id, source_order_ids')
+        .in('generated_order_id', orderIds)
+
+    if (error || !gifts || gifts.length === 0) return // Not gifts, or error (ignore)
+
+    // 2. Identify Source Orders to Restore
+    // source_order_ids is JSONB (array of numbers)
+    // We flatten all source IDs
+    const sourceIdsToRestore: number[] = []
+    gifts.forEach((g: any) => {
+        if (Array.isArray(g.source_order_ids)) {
+            sourceIdsToRestore.push(...g.source_order_ids)
+        }
+    })
+
+    if (sourceIdsToRestore.length > 0) {
+        // 3. Restore Source Status (GIFT_APPLIED -> NULL)
+        const { error: restoreError } = await supabase
+            .from('cm_raw_order_lines')
+            .update({ process_status: null } as any)
+            .in('id', sourceIdsToRestore)
+
+        if (restoreError) {
+            console.error('Failed to restore source orders:', restoreError)
+        } else {
+            console.log(`Restored ${sourceIdsToRestore.length} source orders from GIFT_APPLIED status.`)
+        }
+    }
+
+    // 4. Delete History Records
+    // We deleting the gift order anyway, but foreign key is SET NULL, so we manually clean up history or let it be?
+    // User wants it gone.
+    const { error: historyDeleteError } = await supabase
+        .from('cm_order_gifts')
+        .delete()
+        .in('generated_order_id', orderIds)
+
+    if (historyDeleteError) {
+        console.error('Failed to delete gift history:', historyDeleteError)
+    }
+}
+
 // Delete a single order
 export async function deleteOrder(id: number) {
     const supabase = await createClient()
+
+    // Smart Revert Check
+    await revertGiftStatus(supabase, [id])
+
     const { error } = await supabase.from('cm_raw_order_lines').delete().eq('id', id)
 
     if (error) return { error: error.message }
@@ -119,6 +170,9 @@ export async function deleteOrder(id: number) {
 export async function deleteOrders(ids: number[]) {
     const supabase = await createClient()
     if (!ids.length) return { success: true }
+
+    // Smart Revert Check
+    await revertGiftStatus(supabase, ids)
 
     const { error } = await supabase
         .from('cm_raw_order_lines')
