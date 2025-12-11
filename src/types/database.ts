@@ -29,6 +29,7 @@ export interface RawOrderLine {
     status: string | null;
 
     // Additional fields for PlayAuto
+    ordered_at: string | null;
     paid_at: string | null;
     collected_at: string | null;
     status_changed_at: string | null;

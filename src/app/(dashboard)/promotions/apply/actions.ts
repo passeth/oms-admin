@@ -56,16 +56,17 @@ function parseKoreanDate(dateStr: string | null): Date {
 }
 
 // 1. Get Candidate Promotions
-// Returns promotions that are active during the period of "New Orders"
+// Returns promotions that are active during the period of "New Unprocessed Orders"
 export async function getCandidatePromotions() {
     const supabase = await createClient()
 
     // A. Get date range of unprocessed orders
+    // Changed: Use 'ordered_at' instead of 'paid_at' to reflect user purchase time accurately
     const { data: orders, error: orderError } = await supabase
         .from('cm_raw_order_lines')
-        .select('paid_at')
+        .select('ordered_at')
         .is('process_status', null)
-        .order('paid_at', { ascending: true })
+        .order('ordered_at', { ascending: true })
 
     if (orderError || !orders || orders.length === 0) return []
 
@@ -74,8 +75,8 @@ export async function getCandidatePromotions() {
 
     try {
         // Normalize: Take the date part only (YYYY-MM-DD)
-        const minRaw = parseKoreanDate(orders[0].paid_at)
-        const maxRaw = parseKoreanDate(orders[orders.length - 1].paid_at)
+        const minRaw = parseKoreanDate(orders[0].ordered_at)
+        const maxRaw = parseKoreanDate(orders[orders.length - 1].ordered_at)
 
         if (isNaN(minRaw.getTime()) || isNaN(maxRaw.getTime())) {
             console.error('Invalid date found in orders:', orders[0], orders[orders.length - 1])
@@ -95,11 +96,12 @@ export async function getCandidatePromotions() {
     }
 
     // B. Find overlapping promotions
+    // Fetch ANY rule that was active during the period of these orders
     const { data: rules, error: ruleError } = await supabase
         .from('cm_promo_rules')
         .select('*')
-        .lte('start_date', maxDateStr)
-        .gte('end_date', minDateStr)
+        .lte('start_date', maxDateStr) // Started before the last order
+        .gte('end_date', minDateStr)   // Ended after the first order
         .eq('promo_type', 'Q_BASED')
         .order('created_at', { ascending: false })
 
@@ -115,29 +117,29 @@ export async function getCandidatePromotions() {
 // Core Logic:
 // 1. Fetch Orders in Global Date Range of passed rules
 // 2. Iterate each rule -> find matching orders
-// 3. Matching Priority: strict matching (site_product_code IN target_kit_ids)
+// 3. Matching Priority: strict matching (site_product_code IN target_kit_ids) AND strict date matching
 export async function calculateAllTargets(rules: PromoRule[]) {
     const supabase = await createClient()
 
     if (rules.length === 0) return []
 
-    // A. Determine Global Date Range
-    // To fetch efficient batch of orders
+    // A. Determine Global Date Range from Rules
+    // To fetch efficient batch of orders likely to be relevant
     const startDates = rules.map(r => r.start_date).sort()
     const endDates = rules.map(r => r.end_date).sort()
 
-    const minDateStr = startDates[0]
-    const maxDateStr = endDates[endDates.length - 1]
+    const minDateStr = startDates[0] // Earliest rule start
+    const maxDateStr = endDates[endDates.length - 1] // Latest rule end
 
-    // B. Fetch All Candidates
-    // Include site_product_code in selection
+    // B. Fetch All Candidates within this broad range
+    // Changed: Use 'ordered_at' instead of 'paid_at'
     const { data: orders, error: orderError } = await supabase
         .from('cm_raw_order_lines')
         .select('*')
         .is('process_status', null)
-        .gte('paid_at', minDateStr)
-        .lte('paid_at', maxDateStr + ' 23:59:59') // Include full end day
-        .order('paid_at', { ascending: true })
+        .gte('ordered_at', minDateStr)
+        .lte('ordered_at', maxDateStr + ' 23:59:59') // Include full end day
+        .order('ordered_at', { ascending: true })
 
     if (orderError) throw new Error('Error fetching orders: ' + orderError.message)
     if (!orders || orders.length === 0) return []
@@ -151,12 +153,14 @@ export async function calculateAllTargets(rules: PromoRule[]) {
 
         // Filter orders for this rule
         const ruleOrders = orders.filter((order: any) => {
-            // 1. Date Check
-            const orderDateStr = order.paid_at.substring(0, 10) // YYYY-MM-DD
+            // 1. Strict Date Check (using ordered_at)
+            // The order MUST have been placed during the promo period
+            if (!order.ordered_at) return false
+            const orderDateStr = order.ordered_at.substring(0, 10) // YYYY-MM-DD
+            
             if (orderDateStr < rule.start_date || orderDateStr > rule.end_date) return false
 
             // 2. Product Match (Strict: site_product_code)
-            // The rule's target_kit_ids contains the list of valid site_product_codes
             if (!order.site_product_code) return false
 
             // Allow string comparison (trim spaces)

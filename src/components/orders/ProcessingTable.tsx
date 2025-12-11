@@ -52,8 +52,8 @@ export function ProcessingTable({
         option: 250,
         kit: 140,
         qty: 80,
-        paid_at: 140,
-        actions: 100
+        ordered_at: 140,
+        paid_at: 140
     })
     const [resizingCol, setResizingCol] = useState<string | null>(null)
     const [resizeStartX, setResizeStartX] = useState<number | null>(null)
@@ -390,11 +390,14 @@ export function ProcessingTable({
                                     <div className="flex items-center">Qty <SortIcon field="qty" /></div>
                                     <Resizer col="qty" />
                                 </th>
+                                <th style={{ width: colWidths.ordered_at }} onClick={() => handleSort('ordered_at')} className="px-4 py-4 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-100 relative group">
+                                    <div className="flex items-center">Ordered At <SortIcon field="ordered_at" /></div>
+                                    <Resizer col="ordered_at" />
+                                </th>
                                 <th style={{ width: colWidths.paid_at }} onClick={() => handleSort('paid_at')} className="px-4 py-4 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-100 relative group">
                                     <div className="flex items-center">Paid At <SortIcon field="paid_at" /></div>
                                     <Resizer col="paid_at" />
                                 </th>
-                                <th style={{ width: colWidths.actions }} className="px-4 py-4 text-right border-b border-slate-100 relative">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -426,13 +429,8 @@ export function ProcessingTable({
                                                     <td className="px-2 py-2 border-r border-slate-50"><input className="w-full p-1 border rounded" value={editForm.option_text || ''} onChange={e => setEditForm({ ...editForm, option_text: e.target.value })} /></td>
                                                     <td className="px-2 py-2 border-r border-slate-50"><input className="w-full p-1 border rounded" value={editForm.matched_kit_id || ''} onChange={e => setEditForm({ ...editForm, matched_kit_id: e.target.value })} /></td>
                                                     <td className="px-2 py-2 border-r border-slate-50"><input type="number" className="w-full p-1 border rounded" value={editForm.qty || 1} onChange={e => setEditForm({ ...editForm, qty: parseInt(e.target.value) })} /></td>
+                                                    <td className="px-2 py-2 border-r border-slate-50 text-xs">{row.ordered_at ? row.ordered_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}</td>
                                                     <td className="px-2 py-2 border-r border-slate-50 text-xs">{row.paid_at ? row.paid_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}</td>
-                                                    <td className="px-2 py-2 text-right">
-                                                        <div className="flex justify-end gap-1">
-                                                            <button onClick={saveEdit}><Save size={16} className="text-green-600" /></button>
-                                                            <button onClick={cancelEdit}><X size={16} className="text-slate-400" /></button>
-                                                        </div>
-                                                    </td>
                                                 </>
                                             ) : (
                                                 <>
@@ -450,13 +448,10 @@ export function ProcessingTable({
                                                     </td>
                                                     <td className="px-4 py-2 border-r border-slate-50/50 font-bold">{row.qty}</td>
                                                     <td className="px-4 py-2 border-r border-slate-50/50 text-xs text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis">
-                                                        {row.paid_at ? row.paid_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}
+                                                        {row.ordered_at ? row.ordered_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}
                                                     </td>
-                                                    <td className="px-4 py-2 text-right whitespace-nowrap">
-                                                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <button onClick={() => startEdit(row)} className="text-slate-400 hover:text-black"><Edit2 size={14} /></button>
-                                                            <button onClick={() => handleDelete(row.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={14} /></button>
-                                                        </div>
+                                                    <td className="px-4 py-2 border-r border-slate-50/50 text-xs text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis">
+                                                        {row.paid_at ? row.paid_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}
                                                     </td>
                                                 </>
                                             )}
