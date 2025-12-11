@@ -7,7 +7,11 @@ import * as XLSX from 'xlsx'
 import { createClient } from '@/utils/supabase/client'
 import { RawOrderLine } from '@/types/database'
 
-export function OrderUploader() {
+interface OrderUploaderProps {
+    compact?: boolean
+}
+
+export function OrderUploader({ compact = false }: OrderUploaderProps) {
     const router = useRouter()
     const [isDragging, setIsDragging] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
@@ -178,10 +182,10 @@ export function OrderUploader() {
     }, [])
 
     return (
-        <div className="w-full max-w-2xl mx-auto">
+        <div className={compact ? "w-full" : "w-full max-w-2xl mx-auto"}>
             <div
                 className={`
-          relative border-2 border-dashed rounded-lg p-12 text-center transition-all cursor-pointer
+          relative border-2 border-dashed rounded-lg ${compact ? 'p-6' : 'p-12'} text-center transition-all cursor-pointer
           ${isDragging ? 'border-blue-500 bg-blue-50/10' : 'border-gray-300 dark:border-gray-700'}
           ${isUploading ? 'opacity-50 pointer-events-none' : ''}
         `}
