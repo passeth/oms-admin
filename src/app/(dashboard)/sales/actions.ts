@@ -903,7 +903,7 @@ export async function getSiteItemMatrix(siteName: string, selectedMonth?: string
             q.eq('site_name', siteName).gte('sale_date', start.toISOString()).lte('sale_date', end)
         )
 
-        const months = []
+        const months: string[] = []
         for (let d = new Date(start); d <= safeAnchor; d.setMonth(d.getMonth() + 1)) {
             months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
         }
