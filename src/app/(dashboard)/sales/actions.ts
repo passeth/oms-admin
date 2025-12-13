@@ -747,7 +747,7 @@ export async function getSitePerformanceSummary(selectedMonth?: string) {
         const sites: { [site: string]: { [month: string]: number } } = {}
         const totalRevCurrent = { value: 0 }
 
-        const monthKeys = []
+        const monthKeys: string[] = []
         for (let d = new Date(start); d <= safeAnchor; d.setMonth(d.getMonth() + 1)) {
             monthKeys.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
         }
