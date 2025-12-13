@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Plus, Trash2, Calendar as CalendarIcon, Gift, Search, Edit2, List as ListIcon, Grid, Clock, Check, X, Filter } from 'lucide-react'
+import { Plus, Trash2, Calendar as CalendarIcon, Gift, Search, Edit2, List as ListIcon, Grid, Clock, Check, X, Filter, FileText, Printer, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { PromoRule } from '@/types/database'
 import { createPromotion, updatePromotion, deletePromotion, searchProducts, getPromoStats } from '@/app/(dashboard)/promotions/actions'
 import { getDistinctPlatforms } from '@/app/(dashboard)/orders/actions'
@@ -38,7 +38,7 @@ export function PromotionList({ initialData }: { initialData: PromoRule[] }) {
     return (
         <div className="space-y-6">
             {/* Header / Controls */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-4 rounded-[var(--radius)] border border-border shadow-sm">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-4 rounded-[var(--radius)] border border-border shadow-sm print:hidden">
                 <div className="flex bg-muted p-1 rounded-lg border border-border">
                     <button onClick={() => setView('list')} className={`px-3 py-1.5 text-sm font-bold rounded-md flex items-center gap-2 transition-all ${view === 'list' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
                         <ListIcon size={16} /> List
@@ -81,8 +81,6 @@ export function PromotionList({ initialData }: { initialData: PromoRule[] }) {
 }
 
 // --- SUB-COMPONENTS ---
-
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 
 function ListView({ rules, stats, onEdit }: { rules: PromoRule[], stats: any[], onEdit: (r: PromoRule) => void }) {
     const [sortConfig, setSortConfig] = useState<{ key: keyof PromoRule | 'total_qty', direction: 'asc' | 'desc' } | null>(null)
@@ -204,8 +202,6 @@ function ListView({ rules, stats, onEdit }: { rules: PromoRule[], stats: any[], 
         </div>
     )
 }
-
-
 
 function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: PromoRule | null, platforms: string[], onClose: () => void }) {
     const isEdit = !!initialData

@@ -1,0 +1,6 @@
+{
+    "editor.autoIndentOnPaste": true,
+    "editor.codeActions.triggerOnFocusChange": true,
+    "editor.columnSelection": true,
+    "files.autoSave": "afterDelay"
+}

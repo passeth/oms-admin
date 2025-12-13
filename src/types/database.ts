@@ -67,6 +67,7 @@ export interface PromoRule {
     match_condition_json?: any;
     is_active?: boolean;
     created_at?: string;
+    review_comment?: string | null;
     // Client-side computed stats
     stats?: {
         total_qty: number;

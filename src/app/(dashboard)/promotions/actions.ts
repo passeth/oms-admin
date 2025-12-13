@@ -110,7 +110,7 @@ export async function getPromoStats() {
     const supabase = await createClient()
     const { data, error } = await supabase.from('cm_view_promo_daily_stats').select('*')
     if (error) {
-        console.error('Stats fetch error:', error)
+        console.error('Stats fetch error:', JSON.stringify(error, null, 2))
         return []
     }
     return data
