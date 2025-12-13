@@ -11,7 +11,8 @@ import {
     LogOut,
     PackageCheck,
     Truck,
-    HelpCircle
+    HelpCircle,
+    Sparkles
 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -19,6 +20,7 @@ import { clsx } from 'clsx'
 
 const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'AI Strategy Room', href: '/strategy', icon: Sparkles },
 
     // 1. Core Workflow
     { name: 'Promotion Rules', href: '/promotions', icon: Gift },
