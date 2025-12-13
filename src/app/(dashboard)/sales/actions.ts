@@ -38,7 +38,7 @@ export async function getBrandCategories(brand: string) {
     const supabase = await createClient()
     const { data, error } = await supabase.from('cms_product_master').select('item_category').eq('brand', brand)
     if (error) return []
-    const categories = Array.from(new Set(data.map((d: { item_category: string }) => d.item_category).filter(Boolean)))
+    const categories = Array.from(new Set(data.map((d: { item_category: string }) => d.item_category).filter(Boolean))) as string[]
     return categories.sort()
 }
 

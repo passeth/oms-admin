@@ -217,6 +217,6 @@ export async function getDistinctPlatforms() {
     if (error) return []
 
     // Unique
-    const platforms = Array.from(new Set(data.map(d => d.platform_name).filter(Boolean)))
+    const platforms: string[] = Array.from(new Set(data.map((d: { platform_name: string }) => d.platform_name).filter(Boolean))) as string[]
     return platforms.sort()
 }

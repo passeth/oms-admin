@@ -4,38 +4,50 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
     LayoutDashboard,
-    AlertCircle,
     Gift,
-    Download,
-    Settings,
-    LogOut,
     PackageCheck,
     Truck,
     HelpCircle,
-    Sparkles
+    Sparkles,
+    LogOut,
+    ScrollText,
+    List,
+    Boxes,
+    Package,
+    Link2,
+    TrendingUp,
+    Database,
+    FileBarChart
 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import { clsx } from 'clsx'
 
-const navigation = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'AI Strategy Room', href: '/strategy', icon: Sparkles },
-
-    // 1. Core Workflow
-    { name: 'Promotion Rules', href: '/promotions', icon: Gift },
-    { name: 'Process New Orders', href: '/orders/process', icon: PackageCheck },
-    { name: 'Apply Gifts', href: '/promotions/apply', icon: Gift },
-    { name: 'All Orders', href: '/orders', icon: AlertCircle },
-
-    // 2. Inventory & Config
-    { name: 'BOM Kits', href: '/inventory/boms', icon: Settings },
-    { name: 'Products (ERP)', href: '/inventory/products', icon: Settings },
-    { name: 'Mappings', href: '/inventory/mappings', icon: Settings },
-
-    // 3. Output
-    { name: 'Dispatch Summary', href: '/orders/dispatch', icon: Truck },
-    { name: 'User Guide', href: '/guide', icon: HelpCircle },
+const navGroups = [
+    {
+        label: 'Commerce Operation',
+        items: [
+            { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+            { name: 'Promotion Rules', href: '/promotions', icon: ScrollText },
+            { name: 'New Orders', href: '/orders/process', icon: PackageCheck },
+            { name: 'Apply Gifts', href: '/promotions/apply', icon: Gift },
+            { name: 'All Orders', href: '/orders', icon: List },
+            { name: 'BOM Kits', href: '/inventory/boms', icon: Boxes },
+            { name: 'Products (ERP)', href: '/inventory/products', icon: Package },
+            { name: 'Mappings', href: '/inventory/mappings', icon: Link2 },
+            { name: 'Dispatch', href: '/orders/dispatch', icon: Truck },
+            { name: 'User Guide', href: '/guide', icon: HelpCircle },
+        ]
+    },
+    {
+        label: 'Strategy & Analysis',
+        items: [
+            { name: 'AI Strategy Room', href: '/strategy', icon: Sparkles },
+            { name: 'Sales Overview', href: '/sales/overview', icon: TrendingUp },
+            { name: 'Sales Data', href: '/sales/manage', icon: Database },
+            { name: 'Promotion Report', href: '/promotions/report', icon: FileBarChart },
+        ]
+    }
 ]
 
 export default function Sidebar() {
@@ -54,26 +66,35 @@ export default function Sidebar() {
             <div className="flex h-16 items-center px-6 font-black text-2xl tracking-tighter text-sidebar-foreground">
                 EVAS Commerce
             </div>
-            <div className="flex-1 flex flex-col gap-1 px-3 py-4">
-                {navigation.map((item) => {
-                    const isActive = pathname === item.href
-                    return (
-                        <Link
-                            key={item.name}
-                            href={item.href}
-                            className={clsx(
-                                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
-                                isActive
-                                    ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md transform scale-[1.02]'
-                                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                            )}
-                        >
-                            <item.icon className={clsx("h-4 w-4", isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground")} />
-                            {item.name}
-                        </Link>
-                    )
-                })}
+
+            <div className="flex-1 flex flex-col gap-6 px-3 py-4 overflow-y-auto">
+                {navGroups.map((group, idx) => (
+                    <div key={group.label} className="flex flex-col gap-1">
+                        <div className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            {group.label}
+                        </div>
+                        {group.items.map((item) => {
+                            const isActive = pathname === item.href
+                            return (
+                                <Link
+                                    key={item.name}
+                                    href={item.href}
+                                    className={clsx(
+                                        'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
+                                        isActive
+                                            ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md transform scale-[1.02]'
+                                            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                                    )}
+                                >
+                                    <item.icon className={clsx("h-4 w-4", isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground")} />
+                                    {item.name}
+                                </Link>
+                            )
+                        })}
+                    </div>
+                ))}
             </div>
+
             <div className="border-t border-sidebar-border p-4">
                 <button
                     onClick={handleSignOut}

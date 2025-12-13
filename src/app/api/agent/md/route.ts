@@ -36,7 +36,7 @@ export async function POST(req: Request) {
             saveInsight: memorySaveTool,
         },
         maxSteps: 10, // Allow multi-step reasoning
-    });
+    } as any);
 
-    return result.toDataStreamResponse();
+    return (result as any).toDataStreamResponse();
 }

@@ -157,7 +157,7 @@ export async function calculateAllTargets(rules: PromoRule[]) {
             // The order MUST have been placed during the promo period
             if (!order.ordered_at) return false
             const orderDateStr = order.ordered_at.substring(0, 10) // YYYY-MM-DD
-            
+
             if (orderDateStr < rule.start_date || orderDateStr > rule.end_date) return false
 
             // 2. Product Match (Strict: site_product_code)
@@ -348,7 +348,7 @@ export async function searchGiftKits(query: string) {
         .order('kit_id') // Added order
 
     // Create unique list
-    const unique = Array.from(new Set(data?.map((d: any) => d.kit_id) || []))
+    const unique = Array.from(new Set(data?.map((d: any) => d.kit_id) || [])) as string[]
     return unique
 }
 

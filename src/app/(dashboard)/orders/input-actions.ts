@@ -17,7 +17,7 @@ export async function searchKits(query: string) {
         return []
     }
 
-    const uniqueKits = Array.from(new Set(data.map(item => item.kit_id).filter(Boolean))) as string[]
+    const uniqueKits = Array.from(new Set(data.map((item: { kit_id: string }) => item.kit_id).filter(Boolean))) as string[]
     return uniqueKits.sort()
 }
 

@@ -1,17 +1,18 @@
 'use client';
 
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
 import { useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
 
+
 export function StrategyChat() {
     const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
         api: '/api/agent/md',
         maxSteps: 10,
-    });
+    } as any) as any;
 
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -63,8 +64,8 @@ export function StrategyChat() {
 
                             {/* Message Bubble */}
                             <div className={`rounded-lg px-4 py-2 max-w-[80%] text-sm ${m.role === 'user'
-                                    ? 'bg-primary text-primary-foreground rounded-br-none'
-                                    : 'bg-muted rounded-bl-none prose dark:prose-invert max-w-none'
+                                ? 'bg-primary text-primary-foreground rounded-br-none'
+                                : 'bg-muted rounded-bl-none prose dark:prose-invert max-w-none'
                                 }`}>
                                 {m.content ? (
                                     <div className="whitespace-pre-wrap">{m.content}</div>
