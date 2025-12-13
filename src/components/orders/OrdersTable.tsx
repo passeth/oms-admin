@@ -205,20 +205,20 @@ export function OrdersTable({
         <div className="space-y-6">
             {/* --- HEADER & CONTROLS --- */}
             <div className="flex flex-col gap-1">
-                <h1 className="text-2xl font-black tracking-tighter text-black">Order Management</h1>
-                <p className="text-sm text-slate-500">View, Sort, Filter, and Bulk Edit raw order data.</p>
+                <h1 className="text-2xl font-black tracking-tighter text-foreground">Order Management</h1>
+                <p className="text-sm text-muted-foreground">View, Sort, Filter, and Bulk Edit raw order data.</p>
             </div>
 
             {/* Filter Bar */}
             <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-white/20 shadow-sm sticky top-4 z-20 flex flex-wrap gap-4 items-end">
                 <div className="flex-1 min-w-[200px]">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1 block">Search</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1 block">Search</label>
                     <div className="relative">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <input
                             type="text"
                             placeholder="Name, Order No..."
-                            className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-black outline-none"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-background focus:ring-2 focus:ring-ring outline-none"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
@@ -227,9 +227,9 @@ export function OrdersTable({
                 </div>
 
                 <div className="w-[200px]">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1 block">Platform</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1 block">Platform</label>
                     <select
-                        className="w-full p-2 border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-black outline-none"
+                        className="w-full p-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-ring outline-none"
                         value={platformFilter}
                         onChange={(e) => setPlatformFilter(e.target.value)}
                     >
@@ -239,43 +239,43 @@ export function OrdersTable({
                 </div>
 
                 <div className="w-[150px]">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1 block">Start Date</label>
-                    <input type="date" className="w-full p-2 border border-slate-200 rounded-lg outline-none" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1 block">Start Date</label>
+                    <input type="date" className="w-full p-2 border border-border rounded-lg outline-none" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
                 </div>
                 <div className="w-[150px]">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1 block">End Date</label>
-                    <input type="date" className="w-full p-2 border border-slate-200 rounded-lg outline-none" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1 block">End Date</label>
+                    <input type="date" className="w-full p-2 border border-border rounded-lg outline-none" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                 </div>
 
-                <button onClick={applyFilters} className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-medium h-[42px]">
+                <button onClick={applyFilters} className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 font-medium h-[42px]">
                     Apply
                 </button>
             </div>
 
             {/* Bulk Actions */}
             {selectedIds.size > 0 && (
-                <div className="bg-slate-900 text-white p-3 rounded-lg flex justify-between items-center shadow-lg animate-in fade-in slide-in-from-bottom-2">
+                <div className="bg-foreground text-background p-3 rounded-lg flex justify-between items-center shadow-lg animate-in fade-in slide-in-from-bottom-2">
                     <span className="font-semibold ml-2">{selectedIds.size} orders selected</span>
-                    <button onClick={handleBulkDelete} className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-md text-sm font-bold flex gap-2">
+                    <button onClick={handleBulkDelete} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-4 py-1.5 rounded-md text-sm font-bold flex gap-2">
                         <Trash2 className="h-4 w-4" /> Delete
                     </button>
                 </div>
             )}
 
             {/* TABLE */}
-            <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm overflow-x-auto select-none">
+            <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm overflow-x-auto select-none">
                 <div style={{ minWidth: '1100px' }}> {/* Force Scroll Container */}
                     <table className="w-full text-sm text-left table-fixed border-collapse">
-                        <thead className="bg-slate-50 text-slate-500 uppercase font-bold text-xs sticky top-0 z-10">
+                        <thead className="bg-muted text-muted-foreground uppercase font-bold text-xs sticky top-0 z-10">
                             <tr>
                                 {/* 1. Checkbox */}
-                                <th style={{ width: colWidths.checkbox }} className="px-4 py-4 text-center border-b border-r border-slate-100 relative">
+                                <th style={{ width: colWidths.checkbox }} className="px-4 py-4 text-center border-b border-r border-border relative">
                                     <input type="checkbox" className="h-4 w-4 cursor-pointer" checked={selectedIds.size === initialOrders.length && initialOrders.length > 0} onChange={toggleSelectAll} />
                                     <Resizer col="checkbox" />
                                 </th>
 
                                 {/* 2. Platform */}
-                                <th style={{ width: colWidths.platform }} onClick={() => handleSort('platform_name')} className="px-4 py-4 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-100 relative group">
+                                <th style={{ width: colWidths.platform }} onClick={() => handleSort('platform_name')} className="px-4 py-4 cursor-pointer hover:bg-muted/80 border-b border-r border-border relative group">
                                     <div className="flex items-center justify-between">
                                         <span>Platform</span> <SortIcon field="platform_name" />
                                     </div>
@@ -283,7 +283,7 @@ export function OrdersTable({
                                 </th>
 
                                 {/* 3. Product */}
-                                <th style={{ width: colWidths.product }} onClick={() => handleSort('product_name')} className="px-4 py-4 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-100 relative group">
+                                <th style={{ width: colWidths.product }} onClick={() => handleSort('product_name')} className="px-4 py-4 cursor-pointer hover:bg-muted/80 border-b border-r border-border relative group">
                                     <div className="flex items-center justify-between">
                                         <span>Product</span> <SortIcon field="product_name" />
                                     </div>
@@ -291,13 +291,13 @@ export function OrdersTable({
                                 </th>
 
                                 {/* 4. Option */}
-                                <th style={{ width: colWidths.option }} className="px-4 py-4 border-b border-r border-slate-100 relative group">
+                                <th style={{ width: colWidths.option }} className="px-4 py-4 border-b border-r border-border relative group">
                                     <span>Option</span>
                                     <Resizer col="option" />
                                 </th>
 
                                 {/* 5. Kit */}
-                                <th style={{ width: colWidths.kit }} onClick={() => handleSort('matched_kit_id')} className="px-4 py-4 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-100 relative group">
+                                <th style={{ width: colWidths.kit }} onClick={() => handleSort('matched_kit_id')} className="px-4 py-4 cursor-pointer hover:bg-muted/80 border-b border-r border-border relative group">
                                     <div className="flex items-center justify-between">
                                         <span>Kit</span> <SortIcon field="matched_kit_id" />
                                     </div>
@@ -305,7 +305,7 @@ export function OrdersTable({
                                 </th>
 
                                 {/* 6. Qty */}
-                                <th style={{ width: colWidths.qty }} onClick={() => handleSort('qty')} className="px-4 py-4 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-100 relative group">
+                                <th style={{ width: colWidths.qty }} onClick={() => handleSort('qty')} className="px-4 py-4 cursor-pointer hover:bg-muted/80 border-b border-r border-border relative group">
                                     <div className="flex items-center justify-between">
                                         <span>Qty</span> <SortIcon field="qty" />
                                     </div>
@@ -313,7 +313,7 @@ export function OrdersTable({
                                 </th>
 
                                 {/* 7. Paid Date */}
-                                <th style={{ width: colWidths.paid_at }} onClick={() => handleSort('paid_at')} className="px-4 py-4 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-100 relative group">
+                                <th style={{ width: colWidths.paid_at }} onClick={() => handleSort('paid_at')} className="px-4 py-4 cursor-pointer hover:bg-muted/80 border-b border-r border-border relative group">
                                     <div className="flex items-center justify-between">
                                         <span>Paid At</span> <SortIcon field="paid_at" />
                                     </div>
@@ -321,19 +321,19 @@ export function OrdersTable({
                                 </th>
 
                                 {/* 8. Actions */}
-                                <th style={{ width: colWidths.actions }} className="px-4 py-4 text-right border-b border-slate-100 relative">
+                                <th style={{ width: colWidths.actions }} className="px-4 py-4 text-right border-b border-border relative">
                                     Actions
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-border">
                             {initialOrders.length === 0 ? (
-                                <tr><td colSpan={8} className="px-6 py-16 text-center text-slate-400">No data found.</td></tr>
+                                <tr><td colSpan={8} className="px-6 py-16 text-center text-muted-foreground">No data found.</td></tr>
                             ) : (
                                 initialOrders.map((row) => (
-                                    <tr key={row.id} className={`hover:bg-slate-50 transition-colors ${selectedIds.has(row.id) ? 'bg-blue-50/50' : ''}`}>
+                                    <tr key={row.id} className={`hover:bg-muted/50 transition-colors ${selectedIds.has(row.id) ? 'bg-primary/5' : ''}`}>
                                         {/* Checkbox */}
-                                        <td className="px-4 py-2 text-center border-r border-slate-50 cursor-pointer"
+                                        <td className="px-4 py-2 text-center border-r border-border cursor-pointer"
                                             onMouseDown={() => onMouseDownCheckbox(row.id, selectedIds.has(row.id))}
                                             onMouseEnter={() => onMouseEnterCheckbox(row.id)}
                                         >
@@ -343,42 +343,42 @@ export function OrdersTable({
                                         {editId === row.id ? (
                                             // EDIT MODE
                                             <>
-                                                <td className="px-2 py-2 border-r border-slate-50">{row.platform_name}</td>
-                                                <td className="px-2 py-2 border-r border-slate-50 truncate text-xs">{row.product_name}</td>
-                                                <td className="px-2 py-2 border-r border-slate-50">
-                                                    <input className="w-full p-1 border rounded bg-blue-50" value={editForm.option_text || ''} onChange={e => setEditForm({ ...editForm, option_text: e.target.value })} />
+                                                <td className="px-2 py-2 border-r border-border">{row.platform_name}</td>
+                                                <td className="px-2 py-2 border-r border-border truncate text-xs">{row.product_name}</td>
+                                                <td className="px-2 py-2 border-r border-border">
+                                                    <input className="w-full p-1 border rounded bg-primary/5" value={editForm.option_text || ''} onChange={e => setEditForm({ ...editForm, option_text: e.target.value })} />
                                                 </td>
-                                                <td className="px-2 py-2 border-r border-slate-50">
-                                                    <input className="w-full p-1 border rounded bg-blue-50" value={editForm.matched_kit_id || ''} onChange={e => setEditForm({ ...editForm, matched_kit_id: e.target.value })} />
+                                                <td className="px-2 py-2 border-r border-border">
+                                                    <input className="w-full p-1 border rounded bg-primary/5" value={editForm.matched_kit_id || ''} onChange={e => setEditForm({ ...editForm, matched_kit_id: e.target.value })} />
                                                 </td>
-                                                <td className="px-2 py-2 border-r border-slate-50">
-                                                    <input type="number" className="w-full p-1 border rounded bg-blue-50" value={editForm.qty || 1} onChange={e => setEditForm({ ...editForm, qty: parseInt(e.target.value) })} />
+                                                <td className="px-2 py-2 border-r border-border">
+                                                    <input type="number" className="w-full p-1 border rounded bg-primary/5" value={editForm.qty || 1} onChange={e => setEditForm({ ...editForm, qty: parseInt(e.target.value) })} />
                                                 </td>
-                                                <td className="px-2 py-2 border-r border-slate-50 text-xs">{row.paid_at ? row.paid_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}</td>
+                                                <td className="px-2 py-2 border-r border-border text-xs">{row.paid_at ? row.paid_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}</td>
                                                 <td className="px-2 py-2 text-right">
                                                     <div className="flex justify-end gap-1">
                                                         <button onClick={saveEdit}><Save size={16} className="text-green-600" /></button>
-                                                        <button onClick={cancelEdit}><X size={16} className="text-slate-400" /></button>
+                                                        <button onClick={cancelEdit}><X size={16} className="text-muted-foreground" /></button>
                                                     </div>
                                                 </td>
                                             </>
                                         ) : (
                                             // VIEW MODE
                                             <>
-                                                <td className="px-4 py-2 border-r border-slate-50 text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis">{row.platform_name}</td>
-                                                <td className="px-4 py-2 border-r border-slate-50 text-slate-500 whitespace-nowrap overflow-hidden text-ellipsis" title={row.product_name || ''}>{row.product_name}</td>
-                                                <td className="px-4 py-2 border-r border-slate-50 text-slate-500 whitespace-nowrap overflow-hidden text-ellipsis" title={row.option_text || ''}>{row.option_text}</td>
-                                                <td className="px-4 py-2 border-r border-slate-50 font-mono text-xs text-blue-600 whitespace-nowrap overflow-hidden text-ellipsis font-bold">
-                                                    {row.matched_kit_id || <span className="text-red-300">Unmatched</span>}
+                                                <td className="px-4 py-2 border-r border-border text-foreground font-medium whitespace-nowrap overflow-hidden text-ellipsis">{row.platform_name}</td>
+                                                <td className="px-4 py-2 border-r border-border text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={row.product_name || ''}>{row.product_name}</td>
+                                                <td className="px-4 py-2 border-r border-border text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={row.option_text || ''}>{row.option_text}</td>
+                                                <td className="px-4 py-2 border-r border-border font-mono text-xs text-primary whitespace-nowrap overflow-hidden text-ellipsis font-bold">
+                                                    {row.matched_kit_id || <span className="text-destructive/70">Unmatched</span>}
                                                 </td>
-                                                <td className="px-4 py-2 border-r border-slate-50 font-bold">{row.qty}</td>
-                                                <td className="px-4 py-2 border-r border-slate-50 text-xs text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis">
+                                                <td className="px-4 py-2 border-r border-border font-bold">{row.qty}</td>
+                                                <td className="px-4 py-2 border-r border-border text-xs text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">
                                                     {row.paid_at ? row.paid_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}
                                                 </td>
                                                 <td className="px-4 py-2 text-right whitespace-nowrap">
                                                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <button onClick={() => startEdit(row)} className="text-slate-400 hover:text-black"><Edit2 size={14} /></button>
-                                                        <button onClick={() => handleDelete(row.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={14} /></button>
+                                                        <button onClick={() => startEdit(row)} className="text-muted-foreground hover:text-foreground"><Edit2 size={14} /></button>
+                                                        <button onClick={() => handleDelete(row.id)} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
                                                     </div>
                                                 </td>
                                             </>
@@ -392,8 +392,8 @@ export function OrdersTable({
             </div>
 
             {/* Pagination */}
-            <div className="flex justify-between items-center text-sm text-slate-500 px-2">
-                <div>Showing <span className="font-bold text-black">{Math.min(initialOrders.length, 50)}</span> of <span className="font-bold text-black">{totalCount}</span> orders</div>
+            <div className="flex justify-between items-center text-sm text-muted-foreground px-2">
+                <div>Showing <span className="font-bold text-foreground">{Math.min(initialOrders.length, 50)}</span> of <span className="font-bold text-foreground">{totalCount}</span> orders</div>
                 <div className="flex gap-2">
                     <button disabled={currentPage <= 1} onClick={() => {
                         const params = new URLSearchParams(searchParams.toString())

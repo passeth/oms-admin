@@ -48,8 +48,8 @@ export default function Sidebar() {
     }
 
     return (
-        <div className="flex h-full w-64 flex-col bg-white/50 backdrop-blur-xl border-r border-white/20 shadow-sm">
-            <div className="flex h-16 items-center px-6 font-black text-2xl tracking-tighter text-black">
+        <div className="flex h-full w-64 flex-col bg-sidebar border-r border-sidebar-border shadow-sm">
+            <div className="flex h-16 items-center px-6 font-black text-2xl tracking-tighter text-sidebar-foreground">
                 EVAS Commerce
             </div>
             <div className="flex-1 flex flex-col gap-1 px-3 py-4">
@@ -62,20 +62,20 @@ export default function Sidebar() {
                             className={clsx(
                                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
                                 isActive
-                                    ? 'bg-black text-white shadow-md transform scale-[1.02]'
-                                    : 'text-slate-600 hover:bg-black/5 hover:text-black'
+                                    ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md transform scale-[1.02]'
+                                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                             )}
                         >
-                            <item.icon className={clsx("h-4 w-4", isActive ? "text-white" : "text-slate-500")} />
+                            <item.icon className={clsx("h-4 w-4", isActive ? "text-sidebar-primary-foreground" : "text-sidebar-foreground")} />
                             {item.name}
                         </Link>
                     )
                 })}
             </div>
-            <div className="border-t border-slate-200 p-4">
+            <div className="border-t border-sidebar-border p-4">
                 <button
                     onClick={handleSignOut}
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-500 transition-colors"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                 >
                     <LogOut className="h-4 w-4" />
                     Sign out

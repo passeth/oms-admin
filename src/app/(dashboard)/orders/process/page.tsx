@@ -36,21 +36,17 @@ export default async function OrderProcessPage(props: {
     const platforms = await getDistinctPlatforms()
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="space-y-6 w-full">
             {/* Top Section: Upload & Download */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Top Section: Upload & Download (Compact) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* 1. Uploader */}
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full flex flex-col">
-                    <h2 className="text-lg font-bold mb-4">Upload New Orders</h2>
-                    <div className="flex-1 min-h-0">
-                        <OrderUploader compact />
-                    </div>
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3">
+                    <OrderUploader compact />
                 </div>
 
                 {/* 2. Downloader (Finalize) */}
-                <div className="bg-white rounded-xl shadow-sm h-full">
-                    <ExcelDownloader />
-                </div>
+                <ExcelDownloader compact />
             </div>
 
             <ProcessingTable
@@ -58,7 +54,7 @@ export default async function OrderProcessPage(props: {
                 totalCount={count}
                 currentPage={page}
                 uploadDate={uploadDate}
-                platforms={platforms}
+                platforms={platforms as string[]}
             />
         </div>
     )

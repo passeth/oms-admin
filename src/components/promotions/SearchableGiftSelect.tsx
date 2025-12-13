@@ -76,17 +76,17 @@ export function SearchableGiftSelect({ value, onChange, placeholder = "Search Gi
                     placeholder={placeholder}
                     className="pr-8 h-8 text-xs font-mono"
                 />
-                <div className="absolute right-2 top-2 text-slate-400">
+                <div className="absolute right-2 top-2 text-muted-foreground">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                 </div>
             </div>
 
             {isOpen && suggestions.length > 0 && (
-                <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-y-auto">
                     {suggestions.map((kitId) => (
                         <div
                             key={kitId}
-                            className="px-3 py-2 text-xs cursor-pointer hover:bg-blue-50 font-mono text-slate-700"
+                            className="px-3 py-2 text-xs cursor-pointer hover:bg-accent hover:text-accent-foreground font-mono text-popover-foreground"
                             onClick={() => handleSelect(kitId)}
                         >
                             {kitId}
@@ -96,7 +96,7 @@ export function SearchableGiftSelect({ value, onChange, placeholder = "Search Gi
             )}
 
             {isOpen && query.length >= 2 && suggestions.length === 0 && !loading && (
-                <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg p-2 text-xs text-slate-400 text-center">
+                <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg p-2 text-xs text-muted-foreground text-center">
                     No results found
                 </div>
             )}

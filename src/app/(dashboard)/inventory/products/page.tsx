@@ -24,8 +24,8 @@ export default async function ProductsPage({
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-1">
-                <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">ERP Products Inventory</h1>
-                <p className="text-base text-slate-600 dark:text-slate-400">
+                <h1 className="text-3xl font-extrabold tracking-tight text-foreground">ERP Products Inventory</h1>
+                <p className="text-base text-muted-foreground">
                     Manage the master list of individual products (SKUs) synchronized from ERP.
                 </p>
             </div>

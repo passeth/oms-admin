@@ -48,8 +48,8 @@ export function ProcessingTable({
     const [colWidths, setColWidths] = useState<Record<string, number>>({
         checkbox: 48,
         platform: 120,
-        product: 300,
-        option: 250,
+        product: 500,
+        option: 400,
         kit: 140,
         qty: 80,
         ordered_at: 140,
@@ -291,31 +291,31 @@ export function ProcessingTable({
             {/* ... (Header and Filters) ... */}
             <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-black tracking-tighter text-black">New Order Processing <span className="text-slate-400 font-medium">({totalCount})</span></h1>
-                    <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">Action Required</span>
+                    <h1 className="text-2xl font-black tracking-tighter text-foreground">New Order Processing <span className="text-muted-foreground font-medium">({totalCount})</span></h1>
+                    <span className="bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">Action Required</span>
                 </div>
-                <p className="text-sm text-slate-500">
-                    Processing batch from: <span className="font-mono text-black font-bold">{uploadDate ? new Date(uploadDate).toLocaleString() : 'No Recent Upload'}</span>
+                <p className="text-sm text-muted-foreground">
+                    Processing batch from: <span className="font-mono text-foreground font-bold">{uploadDate ? new Date(uploadDate).toLocaleString() : 'No Recent Upload'}</span>
                 </p>
             </div>
 
             {/* Stats / Alert */}
             {unmatchedCount > 0 && (
-                <div className="bg-red-50 border border-red-100 rounded-lg p-3 flex items-center gap-3 text-red-700">
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-3 text-destructive">
                     <AlertCircle className="h-5 w-5" />
                     <span className="font-semibold">{unmatchedCount} orders have unmatched options! Please fix them before shipping.</span>
                 </div>
             )}
 
             {/* Filter Bar */}
-            <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-white/20 shadow-sm sticky top-4 z-20 flex flex-wrap gap-4 items-center">
+            <div className="bg-background/80 backdrop-blur-sm p-4 rounded-xl border border-border shadow-sm sticky top-4 z-20 flex flex-wrap gap-4 items-center">
                 <div className="flex-1 min-w-[200px]">
                     <div className="relative">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <input
                             type="text"
                             placeholder="Receiver, Order No..."
-                            className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-black outline-none"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-background focus:ring-2 focus:ring-ring outline-none"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
@@ -325,7 +325,7 @@ export function ProcessingTable({
 
                 <div className="w-[180px]">
                     <select
-                        className="w-full p-2 border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-black outline-none"
+                        className="w-full p-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-ring outline-none"
                         value={platformFilter}
                         onChange={(e) => setPlatformFilter(e.target.value)}
                     >
@@ -336,38 +336,38 @@ export function ProcessingTable({
 
                 <button
                     onClick={toggleUnmatched}
-                    className={`px-4 py-2 rounded-lg font-bold border transition-colors ${unmatchedOnly ? 'bg-red-600 border-red-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-200'}`}
+                    className={`px-4 py-2 rounded-lg font-bold border transition-colors ${unmatchedOnly ? 'bg-destructive border-destructive text-destructive-foreground' : 'bg-background border-border text-muted-foreground hover:text-destructive hover:border-destructive/30'}`}
                 >
                     {unmatchedOnly ? 'Showing Unmatched' : 'Show Unmatched Only'}
                 </button>
 
                 <button
                     onClick={toggleGift}
-                    className={`px-4 py-2 rounded-lg font-bold border transition-colors ${giftOnly ? 'bg-purple-600 border-purple-600 text-white' : 'bg-white border-slate-200 text-slate-500 hover:text-purple-600 hover:border-purple-200'}`}
+                    className={`px-4 py-2 rounded-lg font-bold border transition-colors ${giftOnly ? 'bg-primary border-primary text-primary-foreground' : 'bg-background border-border text-muted-foreground hover:text-primary hover:border-primary/30'}`}
                 >
                     {giftOnly ? 'Showing Gifts' : 'Show Gifts Only'}
                 </button>
 
-                <button onClick={applyFilters} className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-medium h-[42px]">
+                <button onClick={applyFilters} className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 font-medium h-[42px]">
                     Apply
                 </button>
             </div>
 
             {/* Bulk Actions */}
             {selectedIds.size > 0 && (
-                <div className="bg-slate-900 text-white p-3 rounded-lg flex justify-between items-center shadow-lg animate-in fade-in slide-in-from-bottom-2">
+                <div className="bg-foreground text-background p-3 rounded-lg flex justify-between items-center shadow-lg animate-in fade-in slide-in-from-bottom-2">
                     <span className="font-semibold ml-2">{selectedIds.size} orders selected</span>
-                    <button onClick={handleBulkDelete} className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-md text-sm font-bold flex gap-2">
+                    <button onClick={handleBulkDelete} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-4 py-1.5 rounded-md text-sm font-bold flex gap-2">
                         <Trash2 className="h-4 w-4" /> Delete
                     </button>
                 </div>
             )}
 
             {/* TABLE */}
-            <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm overflow-x-auto select-none min-h-[500px]">
-                <div style={{ minWidth: '1100px' }}>
+            <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm overflow-x-auto select-none min-h-[500px]">
+                <div className="w-full min-w-full">
                     <table className="w-full text-sm text-left table-fixed border-collapse">
-                        <thead className="bg-slate-50 text-slate-500 uppercase font-bold text-xs sticky top-0 z-10">
+                        <thead className="bg-muted text-muted-foreground uppercase font-bold text-xs sticky top-0 z-10">
                             <tr>
                                 <th style={{ width: colWidths.checkbox }} className="px-4 py-4 text-center border-b border-r border-slate-100 relative">
                                     <input type="checkbox" className="h-4 w-4 cursor-pointer" checked={selectedIds.size === initialOrders.length && initialOrders.length > 0} onChange={toggleSelectAll} />
@@ -400,22 +400,22 @@ export function ProcessingTable({
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-border">
                             {initialOrders.length === 0 ? (
-                                <tr><td colSpan={8} className="px-6 py-16 text-center text-slate-400">No new orders found.</td></tr>
+                                <tr><td colSpan={8} className="px-6 py-16 text-center text-muted-foreground">No new orders found.</td></tr>
                             ) : (
                                 initialOrders.map((row) => {
                                     // Highlight Logic: If no matched_kit_id, show Amber/Red row
                                     const isUnmatched = !row.matched_kit_id;
-                                    const rowClass = isUnmatched ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-slate-50';
-                                    const selectedClass = selectedIds.has(row.id) ? 'bg-blue-50/80' : '';
+                                    const rowClass = isUnmatched ? 'bg-destructive/5 hover:bg-destructive/10' : 'hover:bg-muted/50';
+                                    const selectedClass = selectedIds.has(row.id) ? 'bg-primary/5' : '';
 
                                     // Highlight active edit cell
                                     const isKitEditing = editingKit?.orderId === row.id
 
                                     return (
-                                        <tr key={row.id} className={`transition-colors border-b border-slate-50 ${rowClass} ${selectedClass}`}>
-                                            <td className="px-4 py-2 text-center border-r border-slate-50/50 cursor-pointer"
+                                        <tr key={row.id} className={`transition-colors border-b border-border ${rowClass} ${selectedClass}`}>
+                                            <td className="px-4 py-2 text-center border-r border-border cursor-pointer"
                                                 onMouseDown={() => onMouseDownCheckbox(row.id, selectedIds.has(row.id))}
                                                 onMouseEnter={() => onMouseEnterCheckbox(row.id)}
                                             >
@@ -424,33 +424,33 @@ export function ProcessingTable({
 
                                             {editId === row.id ? (
                                                 <>
-                                                    <td className="px-2 py-2 border-r border-slate-50">{row.platform_name}</td>
-                                                    <td className="px-2 py-2 border-r border-slate-50 truncate text-xs">{row.product_name}</td>
-                                                    <td className="px-2 py-2 border-r border-slate-50"><input className="w-full p-1 border rounded" value={editForm.option_text || ''} onChange={e => setEditForm({ ...editForm, option_text: e.target.value })} /></td>
-                                                    <td className="px-2 py-2 border-r border-slate-50"><input className="w-full p-1 border rounded" value={editForm.matched_kit_id || ''} onChange={e => setEditForm({ ...editForm, matched_kit_id: e.target.value })} /></td>
-                                                    <td className="px-2 py-2 border-r border-slate-50"><input type="number" className="w-full p-1 border rounded" value={editForm.qty || 1} onChange={e => setEditForm({ ...editForm, qty: parseInt(e.target.value) })} /></td>
-                                                    <td className="px-2 py-2 border-r border-slate-50 text-xs">{row.ordered_at ? row.ordered_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}</td>
-                                                    <td className="px-2 py-2 border-r border-slate-50 text-xs">{row.paid_at ? row.paid_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}</td>
+                                                    <td className="px-2 py-2 border-r border-border">{row.platform_name}</td>
+                                                    <td className="px-2 py-2 border-r border-border truncate text-xs">{row.product_name}</td>
+                                                    <td className="px-2 py-2 border-r border-border"><input className="w-full p-1 border rounded" value={editForm.option_text || ''} onChange={e => setEditForm({ ...editForm, option_text: e.target.value })} /></td>
+                                                    <td className="px-2 py-2 border-r border-border"><input className="w-full p-1 border rounded" value={editForm.matched_kit_id || ''} onChange={e => setEditForm({ ...editForm, matched_kit_id: e.target.value })} /></td>
+                                                    <td className="px-2 py-2 border-r border-border"><input type="number" className="w-full p-1 border rounded" value={editForm.qty || 1} onChange={e => setEditForm({ ...editForm, qty: parseInt(e.target.value) })} /></td>
+                                                    <td className="px-2 py-2 border-r border-border text-xs">{row.ordered_at ? row.ordered_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}</td>
+                                                    <td className="px-2 py-2 border-r border-border text-xs">{row.paid_at ? row.paid_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}</td>
                                                 </>
                                             ) : (
                                                 <>
-                                                    <td className="px-4 py-2 border-r border-slate-50/50 text-slate-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis">{row.platform_name}</td>
-                                                    <td className="px-4 py-2 border-r border-slate-50/50 text-slate-500 whitespace-nowrap overflow-hidden text-ellipsis" title={row.product_name || ''}>{row.product_name}</td>
-                                                    <td className="px-4 py-2 border-r border-slate-50/50 text-slate-500 whitespace-nowrap overflow-hidden text-ellipsis" title={row.option_text || ''}>{row.option_text}</td>
+                                                    <td className="px-4 py-2 border-r border-border text-foreground font-medium whitespace-nowrap overflow-hidden text-ellipsis">{row.platform_name}</td>
+                                                    <td className="px-4 py-2 border-r border-border text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={row.product_name || ''}>{row.product_name}</td>
+                                                    <td className="px-4 py-2 border-r border-border text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={row.option_text || ''}>{row.option_text}</td>
                                                     <td
-                                                        className={`px-4 py-2 border-r border-slate-50/50 font-mono text-xs whitespace-nowrap overflow-hidden text-ellipsis font-bold cursor-pointer group-hover:bg-blue-50 transition-colors ${isKitEditing ? 'bg-blue-100 ring-2 ring-inset ring-blue-500' : ''}`}
+                                                        className={`px-4 py-2 border-r border-border font-mono text-xs whitespace-nowrap overflow-hidden text-ellipsis font-bold cursor-pointer group-hover:bg-primary/5 transition-colors ${isKitEditing ? 'bg-primary/10 ring-2 ring-inset ring-ring' : ''}`}
                                                         onClick={(e) => openKitEditor(e, row)}
                                                     >
                                                         <div className="flex items-center justify-between">
-                                                            <span>{row.matched_kit_id || <span className="text-red-400 font-extrabold">Select Kit...</span>}</span>
-                                                            <ChevronsUpDown size={12} className="text-slate-300 opacity-0 group-hover:opacity-100" />
+                                                            <span>{row.matched_kit_id || <span className="text-destructive font-extrabold">Select Kit...</span>}</span>
+                                                            <ChevronsUpDown size={12} className="text-muted-foreground opacity-0 group-hover:opacity-100" />
                                                         </div>
                                                     </td>
-                                                    <td className="px-4 py-2 border-r border-slate-50/50 font-bold">{row.qty}</td>
-                                                    <td className="px-4 py-2 border-r border-slate-50/50 text-xs text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis">
+                                                    <td className="px-4 py-2 border-r border-border font-bold">{row.qty}</td>
+                                                    <td className="px-4 py-2 border-r border-border text-xs text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">
                                                         {row.ordered_at ? row.ordered_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}
                                                     </td>
-                                                    <td className="px-4 py-2 border-r border-slate-50/50 text-xs text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis">
+                                                    <td className="px-4 py-2 border-r border-border text-xs text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">
                                                         {row.paid_at ? row.paid_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}
                                                     </td>
                                                 </>
@@ -468,26 +468,26 @@ export function ProcessingTable({
             {editingKit && (
                 <div
                     ref={popupRef}
-                    className="absolute z-50 bg-white rounded-xl shadow-2xl border border-slate-200 w-[300px] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+                    className="absolute z-50 bg-popover rounded-xl shadow-2xl border border-border w-[300px] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
                     style={{
                         top: editingKit.position.top,
                         left: editingKit.position.left
                     }}
                 >
-                    <div className="p-2 border-b border-slate-100 bg-slate-50 space-y-2">
+                    <div className="p-2 border-b border-border bg-muted/50 space-y-2">
                         {editingKit.optionText && (
-                            <div className="text-xs text-slate-500 bg-white border border-slate-200 p-1.5 rounded break-all max-h-16 overflow-y-auto">
-                                <span className="font-bold text-slate-400 block mb-0.5" style={{ fontSize: '0.65rem' }}>OPTION:</span>
+                            <div className="text-xs text-muted-foreground bg-background border border-border p-1.5 rounded break-all max-h-16 overflow-y-auto">
+                                <span className="font-bold text-muted-foreground block mb-0.5" style={{ fontSize: '0.65rem' }}>OPTION:</span>
                                 {editingKit.optionText}
                             </div>
                         )}
                         <div className="relative">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <input
                                 autoFocus
                                 type="text"
                                 placeholder="Search Kit ID..."
-                                className="w-full pl-8 pr-2 py-2 text-sm border border-slate-200 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full pl-8 pr-2 py-2 text-sm border border-border rounded-md focus:ring-2 focus:ring-ring outline-none bg-background text-foreground"
                                 value={kitSearchQuery}
                                 onChange={(e) => setKitSearchQuery(e.target.value)}
                                 onKeyDown={(e) => {
@@ -499,39 +499,39 @@ export function ProcessingTable({
                     </div>
 
                     {/* Results List */}
-                    <div className="max-h-[160px] overflow-y-auto">
+                    <div className="max-h-[160px] overflow-y-auto bg-popover">
                         {kitSearchResults.length > 0 ? (
-                            <div className="divide-y divide-slate-50">
+                            <div className="divide-y divide-border">
                                 {kitSearchResults.map(kit => (
                                     <button
                                         key={kit}
                                         onClick={() => setKitSearchQuery(kit)}
-                                        className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 text-slate-700 hover:text-blue-600 font-medium transition-colors"
+                                        className="w-full text-left px-4 py-2 text-sm hover:bg-accent text-foreground hover:text-accent-foreground font-medium transition-colors"
                                     >
                                         {kit}
                                     </button>
                                 ))}
                             </div>
                         ) : (
-                            <div className="p-4 text-center text-xs text-slate-400">
+                            <div className="p-4 text-center text-xs text-muted-foreground">
                                 {kitSearchQuery ? "No matches. Use buttons below to assign." : "Type to search..."}
                             </div>
                         )}
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="p-2 border-t border-slate-100 bg-slate-50 flex flex-col gap-2">
+                    <div className="p-2 border-t border-border bg-muted/50 flex flex-col gap-2">
                         <button
                             disabled={!kitSearchQuery}
                             onClick={() => handleApplyKit(false)}
-                            className="w-full flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-700 py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full flex items-center justify-center gap-2 bg-background border border-border hover:border-primary hover:text-primary text-foreground py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Check size={14} /> Only This Order
                         </button>
                         <button
                             disabled={!kitSearchQuery || !editingKit.optionText}
                             onClick={() => handleApplyKit(true)}
-                            className="w-full flex items-center justify-center gap-2 bg-black hover:bg-slate-800 text-white py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Plus size={14} /> Apply &amp; Save Rule
                         </button>
@@ -540,8 +540,8 @@ export function ProcessingTable({
             )}
 
             {/* Pagination */}
-            <div className="flex justify-between items-center text-sm text-slate-500 px-2">
-                <div>Showing <span className="font-bold text-black">{Math.min(initialOrders.length, 50)}</span> of <span className="font-bold text-black">{totalCount}</span> orders</div>
+            <div className="flex justify-between items-center text-sm text-muted-foreground px-2">
+                <div>Showing <span className="font-bold text-foreground">{Math.min(initialOrders.length, 50)}</span> of <span className="font-bold text-foreground">{totalCount}</span> orders</div>
                 <div className="flex gap-2">
                     <button disabled={currentPage <= 1} onClick={() => {
                         const params = new URLSearchParams(searchParams.toString())

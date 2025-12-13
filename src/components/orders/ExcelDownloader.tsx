@@ -6,7 +6,11 @@ import { Download, Loader2, CheckCircle } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { exportOrdersForExcel, finalizeProcessedOrders } from '@/app/(dashboard)/orders/process/actions'
 
-export function ExcelDownloader() {
+interface ExcelDownloaderProps {
+    compact?: boolean
+}
+
+export function ExcelDownloader({ compact = false }: ExcelDownloaderProps) {
     const [loading, setLoading] = useState(false)
     const [finished, setFinished] = useState(false)
 
@@ -105,25 +109,46 @@ export function ExcelDownloader() {
     }
 
     return (
-        <div className="flex flex-col items-center justify-center p-6 border rounded-xl bg-slate-50 border-slate-200 shadow-sm h-full">
-            <div className="text-center space-y-4">
-                <div className="bg-green-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto text-green-600">
-                    {finished ? <CheckCircle className="w-8 h-8" /> : <Download className="w-8 h-8" />}
+        <div className={`border rounded-xl border-slate-200 shadow-sm transition-all ${compact ? 'bg-white p-3' : 'bg-slate-50 p-6 flex flex-col items-center justify-center h-full'}`}>
+            <div className={`flex items-center gap-4 ${compact ? 'flex-row' : 'flex-col text-center space-y-4'}`}>
+                {/* Icon */}
+                <div className={`bg-green-100 flex items-center justify-center rounded-full text-green-600 flex-shrink-0 ${compact ? 'w-10 h-10 p-2' : 'w-16 h-16 p-4'}`}>
+                    {finished ? <CheckCircle className={compact ? 'w-5 h-5' : 'w-8 h-8'} /> : <Download className={compact ? 'w-5 h-5' : 'w-8 h-8'} />}
                 </div>
 
-                <h3 className="text-lg font-bold text-slate-700">Download Final Excel</h3>
-                <p className="text-sm text-slate-500">
-                    Export processed orders and mark as done.
-                </p>
+                {/* Content */}
+                <div className={`flex-1 ${compact ? 'text-left' : ''}`}>
+                    <h3 className={`${compact ? 'text-sm' : 'text-lg'} font-bold text-slate-700`}>
+                        {compact ? 'Download Final Excel' : 'Download Final Excel'}
+                    </h3>
+                    <p className={`text-sm text-slate-500 ${compact ? 'line-clamp-1' : ''}`}>
+                        {compact ? 'Export & Finalize orders' : 'Export processed orders and mark as done.'}
+                    </p>
+                </div>
 
-                <Button
-                    onClick={handleDownload}
-                    disabled={loading}
-                    className="w-full bg-green-600 hover:bg-green-700 font-bold"
-                >
-                    {loading ? <Loader2 className="animate-spin mr-2" /> : <Download className="mr-2 w-4 h-4" />}
-                    {loading ? 'Exporting...' : 'Download & Finalize'}
-                </Button>
+                {/* Button (Only for Compact: Rendered inside the flex row, for Standard: Rendered below) */}
+                {compact && (
+                    <Button
+                        onClick={handleDownload}
+                        disabled={loading}
+                        className="bg-green-600 hover:bg-green-700 font-bold whitespace-nowrap h-9 text-sm px-4"
+                    >
+                        {loading ? <Loader2 className="animate-spin mr-2 w-4 h-4" /> : <Download className="mr-2 w-4 h-4" />}
+                        Export
+                    </Button>
+                )}
+
+                {/* Button for Non-Compact Mode */}
+                {!compact && (
+                    <Button
+                        onClick={handleDownload}
+                        disabled={loading}
+                        className="w-full bg-green-600 hover:bg-green-700 font-bold"
+                    >
+                        {loading ? <Loader2 className="animate-spin mr-2" /> : <Download className="mr-2 w-4 h-4" />}
+                        {loading ? 'Exporting...' : 'Download & Finalize'}
+                    </Button>
+                )}
             </div>
         </div>
     )

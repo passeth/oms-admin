@@ -43,19 +43,19 @@ export function CalendarView({ rules, stats, mode = 'month', onEdit, isReadOnly 
     }
 
     return (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <div className="bg-card rounded-[var(--radius)] border border-border shadow-sm p-6 text-foreground">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-slate-800">{format(currentDate, 'MMMM yyyy')}</h2>
+                <h2 className="text-2xl font-black tracking-tight">{format(currentDate, 'MMMM yyyy')}</h2>
                 <div className="flex gap-2">
-                    <button onClick={() => setCurrentDate(prev => mode === 'month' ? subMonths(prev, 1) : new Date(prev.setDate(prev.getDate() - 7)))} className="px-3 py-1 text-sm font-bold border rounded-lg hover:bg-slate-50 transition-colors">Prev</button>
-                    <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1 text-sm font-bold border rounded-lg hover:bg-slate-50 transition-colors">Today</button>
-                    <button onClick={() => setCurrentDate(prev => mode === 'month' ? addMonths(prev, 1) : new Date(prev.setDate(prev.getDate() + 7)))} className="px-3 py-1 text-sm font-bold border rounded-lg hover:bg-slate-50 transition-colors">Next</button>
+                    <button onClick={() => setCurrentDate(prev => mode === 'month' ? subMonths(prev, 1) : new Date(prev.setDate(prev.getDate() - 7)))} className="px-3 py-1 text-sm font-bold border border-border rounded-lg hover:bg-muted transition-colors">Prev</button>
+                    <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1 text-sm font-bold border border-border rounded-lg hover:bg-muted transition-colors">Today</button>
+                    <button onClick={() => setCurrentDate(prev => mode === 'month' ? addMonths(prev, 1) : new Date(prev.setDate(prev.getDate() + 7)))} className="px-3 py-1 text-sm font-bold border border-border rounded-lg hover:bg-muted transition-colors">Next</button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-5 gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden">
+            <div className="grid grid-cols-5 gap-px bg-border border border-border rounded-xl overflow-hidden shadow-sm">
                 {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(day => (
-                    <div key={day} className="bg-slate-50 p-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">{day}</div>
+                    <div key={day} className="bg-muted p-3 text-center text-xs font-extrabold text-muted-foreground uppercase tracking-wider">{day}</div>
                 ))}
 
                 {days.map((day, i) => {
@@ -67,9 +67,10 @@ export function CalendarView({ rules, stats, mode = 'month', onEdit, isReadOnly 
                     const dateStr = format(day, 'yyyy-MM-dd')
 
                     return (
-                        <div key={day.toISOString()} className={`bg-white min-h-[140px] md:min-h-[160px] h-auto p-2 flex flex-col gap-2 hover:bg-slate-50/50 transition-colors ${isOutside ? 'opacity-40 bg-slate-50' : ''}`}>
+
+                        <div key={day.toISOString()} className={`bg-card min-h-[140px] md:min-h-[160px] h-auto p-2 flex flex-col gap-2 hover:bg-muted/30 transition-colors ${isOutside ? 'opacity-40 bg-muted/50' : ''}`}>
                             <div className="flex justify-between items-start">
-                                <div className={`text-xs font-bold mb-1 w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'text-slate-700'}`}>
+                                <div className={`text-xs font-bold mb-1 w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground'}`}>
                                     {format(day, 'd')}
                                 </div>
                             </div>
@@ -79,9 +80,9 @@ export function CalendarView({ rules, stats, mode = 'month', onEdit, isReadOnly 
                                     const { today, total } = getStats(rule.rule_id, dateStr)
                                     const isStartDay = rule.start_date === dateStr
 
-                                    let borderColor = 'border-l-slate-300'
+                                    let borderColor = 'border-l-border'
                                     if (isStartDay) {
-                                        borderColor = rule.promo_type === 'ALL_GIFT' ? 'border-l-purple-500' : 'border-l-blue-500'
+                                        borderColor = rule.promo_type === 'ALL_GIFT' ? 'border-l-primary' : 'border-l-secondary-foreground'
                                     }
 
                                     return (
@@ -90,26 +91,29 @@ export function CalendarView({ rules, stats, mode = 'month', onEdit, isReadOnly 
                                             disabled={isReadOnly && !onEdit}
                                             onClick={() => onEdit && onEdit(rule)}
                                             className={`
-                                                text-left px-2 py-2 rounded border border-slate-100 shadow-sm w-full group transition-all
-                                                bg-white hover:bg-slate-50 hover:border-slate-300 hover:shadow-md
+                                                text-left px-2 py-2 rounded border border-border shadow-sm w-full group transition-all
+                                                bg-card hover:bg-accent hover:border-sidebar-ring hover:shadow-md
                                                 border-l-4 ${borderColor}
                                                 ${!onEdit && isReadOnly ? 'cursor-default' : ''}
                                             `}
                                         >
-                                            <div className="text-[11px] font-bold text-slate-800 leading-tight break-words">
-                                                {rule.platform_name && <span className="text-[9px] text-slate-400 uppercase mr-1">[{rule.platform_name}]</span>}
+                                            <div className="text-[11px] font-bold text-foreground leading-tight break-words group-hover:text-accent-foreground">
+                                                {rule.platform_name && <span className="text-[9px] text-muted-foreground uppercase mr-1 font-extrabold flex items-center gap-1">
+                                                    {isStartDay && <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />}
+                                                    [{rule.platform_name}]
+                                                </span>}
                                                 {rule.promo_name}
                                             </div>
 
                                             {/* Sales Stats Display */}
-                                            <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-slate-100">
-                                                <div className="text-[10px] text-slate-500 flex items-center gap-1">
-                                                    <span className="font-semibold text-xs text-blue-600">{today}</span>
-                                                    <span className="text-[9px]">today</span>
+                                            <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-border/50">
+                                                <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                    <span className="font-bold text-xs text-primary">{today}</span>
+                                                    <span className="text-[9px] uppercase font-bold tracking-wide">today</span>
                                                 </div>
-                                                <div className="text-[10px] text-slate-400 flex items-center gap-1">
-                                                    <span className="text-[9px]">cum.</span>
-                                                    <span className="font-semibold text-slate-600">{total}</span>
+                                                <div className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
+                                                    <span className="text-[9px] uppercase font-bold">cum.</span>
+                                                    <span className="font-bold text-foreground">{total}</span>
                                                 </div>
                                             </div>
                                         </button>

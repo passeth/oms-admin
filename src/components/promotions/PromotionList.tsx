@@ -7,6 +7,7 @@ import { createPromotion, updatePromotion, deletePromotion, searchProducts, getP
 import { getDistinctPlatforms } from '@/app/(dashboard)/orders/actions'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, startOfWeek, endOfWeek, addMonths, subMonths } from 'date-fns'
+import { CalendarView } from './CalendarView'
 
 type ViewMode = 'list' | 'month' | 'week'
 
@@ -19,7 +20,7 @@ export function PromotionList({ initialData }: { initialData: PromoRule[] }) {
 
     // Load platforms and stats
     useEffect(() => {
-        getDistinctPlatforms().then(setPlatforms)
+        getDistinctPlatforms().then(res => setPlatforms(res as string[]))
         getPromoStats().then(setStats)
     }, [])
 
@@ -37,15 +38,15 @@ export function PromotionList({ initialData }: { initialData: PromoRule[] }) {
     return (
         <div className="space-y-6">
             {/* Header / Controls */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <div className="flex bg-slate-100 p-1 rounded-lg">
-                    <button onClick={() => setView('list')} className={`px-3 py-1.5 text-sm font-bold rounded-md flex items-center gap-2 transition-all ${view === 'list' ? 'bg-white shadow-sm text-black' : 'text-slate-500 hover:text-slate-700'}`}>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-4 rounded-[var(--radius)] border border-border shadow-sm">
+                <div className="flex bg-muted p-1 rounded-lg border border-border">
+                    <button onClick={() => setView('list')} className={`px-3 py-1.5 text-sm font-bold rounded-md flex items-center gap-2 transition-all ${view === 'list' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
                         <ListIcon size={16} /> List
                     </button>
-                    <button onClick={() => setView('month')} className={`px-3 py-1.5 text-sm font-bold rounded-md flex items-center gap-2 transition-all ${view === 'month' ? 'bg-white shadow-sm text-black' : 'text-slate-500 hover:text-slate-700'}`}>
+                    <button onClick={() => setView('month')} className={`px-3 py-1.5 text-sm font-bold rounded-md flex items-center gap-2 transition-all ${view === 'month' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
                         <Grid size={16} /> Month
                     </button>
-                    <button onClick={() => setView('week')} className={`px-3 py-1.5 text-sm font-bold rounded-md flex items-center gap-2 transition-all ${view === 'week' ? 'bg-white shadow-sm text-black' : 'text-slate-500 hover:text-slate-700'}`}>
+                    <button onClick={() => setView('week')} className={`px-3 py-1.5 text-sm font-bold rounded-md flex items-center gap-2 transition-all ${view === 'week' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
                         <Clock size={16} /> Week
                     </button>
                 </div>
@@ -53,7 +54,7 @@ export function PromotionList({ initialData }: { initialData: PromoRule[] }) {
                 <div className="flex gap-2 w-full md:w-auto">
                     <button
                         onClick={() => { setEditingRule(null); setIsFormOpen(true) }}
-                        className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-black text-white px-5 py-2.5 rounded-lg hover:bg-slate-800 transition shadow-lg shadow-slate-200 font-bold"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg hover:bg-primary/90 transition shadow-lg shadow-primary/25 font-bold"
                     >
                         <Plus size={16} /> New Rule
                     </button>
@@ -61,7 +62,7 @@ export function PromotionList({ initialData }: { initialData: PromoRule[] }) {
             </div>
 
             {/* Content View */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm min-h-[500px]">
+            <div className="bg-card rounded-[var(--radius)] border border-border shadow-sm min-h-[500px]">
                 {view === 'list' && <ListView rules={initialData} stats={stats} onEdit={handleEdit} />}
                 {view === 'month' && <CalendarView rules={initialData} stats={stats} mode="month" onEdit={handleEdit} />}
                 {view === 'week' && <CalendarView rules={initialData} stats={stats} mode="week" onEdit={handleEdit} />}
@@ -127,19 +128,19 @@ function ListView({ rules, stats, onEdit }: { rules: PromoRule[], stats: any[], 
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 text-slate-500 uppercase font-bold text-xs border-b border-slate-200">
+                <thead className="bg-muted text-muted-foreground uppercase font-bold text-xs border-b border-border">
                     <tr>
-                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('promo_name')}>
+                        <th className="px-6 py-4 cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('promo_name')}>
                             <div className="flex items-center">Status & Name <SortIcon column="promo_name" /></div>
                         </th>
                         <th className="px-6 py-4">Target (Kit/Code)</th>
-                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('platform_name')}>
+                        <th className="px-6 py-4 cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('platform_name')}>
                             <div className="flex items-center">Platform <SortIcon column="platform_name" /></div>
                         </th>
-                        <th className="px-6 py-4 text-center cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('total_qty')}>
+                        <th className="px-6 py-4 text-center cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('total_qty')}>
                             <div className="flex items-center justify-center">Total Sales <SortIcon column="total_qty" /></div>
                         </th>
-                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('start_date')}>
+                        <th className="px-6 py-4 cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('start_date')}>
                             <div className="flex items-center">Duration <SortIcon column="start_date" /></div>
                         </th>
                         <th className="px-6 py-4 text-center">Condition</th>
@@ -147,7 +148,7 @@ function ListView({ rules, stats, onEdit }: { rules: PromoRule[], stats: any[], 
                         <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                     {sortedRules.map((rule) => {
                         const isActive = new Date() >= new Date(rule.start_date) && new Date() <= new Date(rule.end_date)
                         // Calculate total stats
@@ -155,37 +156,37 @@ function ListView({ rules, stats, onEdit }: { rules: PromoRule[], stats: any[], 
                         const totalQty = ruleStats.reduce((sum, s) => sum + (s.daily_qty || 0), 0)
 
                         return (
-                            <tr key={rule.rule_id} className="hover:bg-slate-50/50 transition-colors">
+                            <tr key={rule.rule_id} className="hover:bg-muted/50 transition-colors">
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
-                                        <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-500' : 'bg-slate-300'}`} />
+                                        <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
                                         <div>
-                                            <div className="font-bold text-slate-900">{rule.promo_name}</div>
-                                            <div className="text-xs text-slate-400 font-mono">{rule.promo_type}</div>
+                                            <div className="font-bold text-foreground">{rule.promo_name}</div>
+                                            <div className="text-xs text-muted-foreground font-mono">{rule.promo_type}</div>
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 font-mono text-slate-600 font-medium max-w-[200px] truncate" title={rule.target_kit_ids?.join(', ') || rule.target_kit_id}>
+                                <td className="px-6 py-4 font-mono text-muted-foreground font-medium max-w-[200px] truncate" title={rule.target_kit_ids?.join(', ') || rule.target_kit_id}>
                                     {rule.target_kit_ids?.length ? `${rule.target_kit_ids.length} items` : rule.target_kit_id}
                                 </td>
-                                <td className="px-6 py-4 text-slate-600">{rule.platform_name || 'All Platforms'}</td>
-                                <td className="px-6 py-4 text-center font-bold text-slate-900">{totalQty > 0 ? totalQty.toLocaleString() : '-'}</td>
-                                <td className="px-6 py-4 text-slate-500 text-xs">
+                                <td className="px-6 py-4 text-muted-foreground">{rule.platform_name || 'All Platforms'}</td>
+                                <td className="px-6 py-4 text-center font-bold text-foreground">{totalQty > 0 ? totalQty.toLocaleString() : '-'}</td>
+                                <td className="px-6 py-4 text-muted-foreground text-xs">
                                     <div>{rule.start_date}</div>
                                     <div>{rule.end_date}</div>
                                 </td>
-                                <td className="px-6 py-4 text-center font-bold text-slate-700">{rule.condition_qty}</td>
+                                <td className="px-6 py-4 text-center font-bold text-muted-foreground">{rule.condition_qty}</td>
                                 <td className="px-6 py-4 text-center">
-                                    <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-bold">
+                                    <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-bold border border-primary/20">
                                         +{rule.gift_qty} ({rule.gift_kit_id})
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                     <div className="flex justify-end gap-2">
-                                        <button onClick={() => onEdit(rule)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors">
+                                        <button onClick={() => onEdit(rule)} className="p-2 text-muted-foreground hover:text-primary hover:bg-muted rounded-full transition-colors">
                                             <Edit2 size={16} />
                                         </button>
-                                        <button onClick={() => handleDelete(rule.rule_id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors">
+                                        <button onClick={() => handleDelete(rule.rule_id)} className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors">
                                             <Trash2 size={16} />
                                         </button>
                                     </div>
@@ -195,7 +196,7 @@ function ListView({ rules, stats, onEdit }: { rules: PromoRule[], stats: any[], 
                     })}
                     {sortedRules.length === 0 && (
                         <tr>
-                            <td colSpan={8} className="px-6 py-12 text-center text-slate-400">No promotions found.</td>
+                            <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground">No promotions found.</td>
                         </tr>
                     )}
                 </tbody>
@@ -204,110 +205,7 @@ function ListView({ rules, stats, onEdit }: { rules: PromoRule[], stats: any[], 
     )
 }
 
-function CalendarView({ rules, stats, mode, onEdit }: { rules: PromoRule[], stats: any[], mode: 'month' | 'week', onEdit: (r: PromoRule) => void }) {
-    const [currentDate, setCurrentDate] = useState(new Date())
 
-    const days = useMemo(() => {
-        const start = mode === 'month' ? startOfWeek(startOfMonth(currentDate)) : startOfWeek(currentDate)
-        const end = mode === 'month' ? endOfWeek(endOfMonth(currentDate)) : endOfWeek(currentDate)
-        return eachDayOfInterval({ start, end })
-    }, [currentDate, mode])
-
-    const getRulesForDay = (date: Date) => {
-        return rules.filter(r => {
-            const start = new Date(r.start_date)
-            const end = new Date(r.end_date)
-            // Normalize times for strict date comparison
-            const d = new Date(date)
-            d.setHours(0, 0, 0, 0)
-            start.setHours(0, 0, 0, 0)
-            end.setHours(23, 59, 59, 999)
-            return d >= start && d <= end
-        })
-    }
-
-    // Helper to get stats
-    const getStats = (ruleId: number, dateStr: string) => {
-        // stats array has rule_id, stats_date (string "YYYY-MM-DD"), daily_qty
-        const entry = stats.find(s => s.rule_id === ruleId && s.stats_date === dateStr)
-        const total = stats.filter(s => s.rule_id === ruleId).reduce((sum, s) => sum + (s.daily_qty || 0), 0)
-        return {
-            today: entry ? entry.daily_qty : 0,
-            total
-        }
-    }
-
-    return (
-        <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold">{format(currentDate, 'MMMM yyyy')}</h2>
-                <div className="flex gap-2">
-                    <button onClick={() => setCurrentDate(prev => mode === 'month' ? subMonths(prev, 1) : new Date(prev.setDate(prev.getDate() - 7)))} className="px-3 py-1 border rounded hover:bg-slate-50">Prev</button>
-                    <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1 border rounded hover:bg-slate-50">Today</button>
-                    <button onClick={() => setCurrentDate(prev => mode === 'month' ? addMonths(prev, 1) : new Date(prev.setDate(prev.getDate() + 7)))} className="px-3 py-1 border rounded hover:bg-slate-50">Next</button>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-5 gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden">
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(day => (
-                    <div key={day} className="bg-slate-50/50 p-2 text-center text-xs font-bold text-slate-500 uppercase">{day}</div>
-                ))}
-
-                {days.map((day, i) => {
-                    // Skip weekends (0=Sun, 6=Sat)
-                    if (day.getDay() === 0 || day.getDay() === 6) return null
-
-                    const dayRules = getRulesForDay(day)
-                    const isToday = isSameDay(day, new Date())
-                    const isOutside = day.getMonth() !== currentDate.getMonth()
-                    const dateStr = format(day, 'yyyy-MM-dd')
-
-                    return (
-                        <div key={day.toISOString()} className={`bg-white min-h-[180px] p-2 flex flex-col gap-2 hover:bg-slate-50/50 ${isOutside ? 'opacity-50 bg-slate-50' : ''}`}>
-                            <div className={`text-xs font-bold mb-1 ${isToday ? 'bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center' : 'text-slate-700'}`}>
-                                {format(day, 'd')}
-                            </div>
-                            {dayRules.map(rule => {
-                                const { today, total } = getStats(rule.rule_id, dateStr)
-                                const isStartDay = rule.start_date === dateStr
-
-                                // Border color logic: Highlight start day, otherwise gray
-                                let borderColor = 'border-l-slate-400' // Default ongoing (Dark Gray)
-                                if (isStartDay) {
-                                    borderColor = rule.promo_type === 'ALL_GIFT' ? 'border-l-purple-500' : 'border-l-blue-500'
-                                }
-
-                                return (
-                                    <button
-                                        key={rule.rule_id}
-                                        onClick={() => onEdit(rule)}
-                                        className={`text-xs text-left px-2 py-3 rounded-md w-full transition-all flex flex-col gap-1 border border-slate-200 shadow-sm group
-                                            bg-slate-100 text-black hover:bg-slate-200 hover:shadow-md
-                                            border-l-4 ${borderColor}
-                                        `}
-                                    >
-                                        <div className="font-bold w-full break-words whitespace-normal leading-tight">
-                                            {rule.platform_name && (
-                                                <div className="text-slate-500 text-[10px] mb-0.5 uppercase tracking-wide">
-                                                    [{rule.platform_name}]
-                                                </div>
-                                            )}
-                                            {rule.promo_name}
-                                        </div>
-                                        <div className="flex justify-between w-full text-[10px] font-medium text-slate-500 mt-2 pt-2 border-t border-slate-200">
-                                            <span>Today: <span className="text-black">{today}</span></span>
-                                            <span>Total: <span className="text-black">{total}</span></span>
-                                        </div>
-                                    </button>
-                                )
-                            })}
-                        </div>
-                    )
-                })}
-            </div>
-        </div>
-    )
-}
 
 function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: PromoRule | null, platforms: string[], onClose: () => void }) {
     const isEdit = !!initialData
@@ -372,19 +270,19 @@ function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: Pr
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <div className="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10">
-                    <h2 className="text-xl font-bold">{isEdit ? 'Edit Promotion' : 'Create Promotion'}</h2>
-                    <button onClick={onClose}><X size={20} className="text-slate-400 hover:text-black" /></button>
+            <div className="bg-card rounded-[var(--radius)] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-border">
+                <div className="p-6 border-b border-border flex justify-between items-center sticky top-0 bg-card z-10">
+                    <h2 className="text-2xl font-black text-foreground">{isEdit ? 'Edit Promotion' : 'Create Promotion'}</h2>
+                    <button onClick={onClose}><X size={20} className="text-muted-foreground hover:text-foreground" /></button>
                 </div>
 
                 <div className="p-6 space-y-6">
                     {/* 1. Basic Info */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-700">Platform</label>
+                            <label className="text-sm font-bold text-foreground">Platform</label>
                             <select
-                                className="w-full p-2.5 border rounded-lg bg-slate-50 focus:bg-white transition-colors"
+                                className="w-full p-2.5 border border-border rounded-lg bg-background focus:bg-card focus:ring-2 focus:ring-ring transition-colors outline-none"
                                 value={formData.platform_name || ''}
                                 onChange={e => setFormData({ ...formData, platform_name: e.target.value })}
                             >
@@ -393,9 +291,9 @@ function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: Pr
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-700">Promotion Name</label>
+                            <label className="text-sm font-bold text-foreground">Promotion Name</label>
                             <input
-                                className="w-full p-2.5 border rounded-lg"
+                                className="w-full p-2.5 border border-border rounded-lg bg-background focus:ring-2 focus:ring-ring outline-none"
                                 placeholder="e.g. Summer Special"
                                 value={formData.promo_name || ''}
                                 onChange={e => setFormData({ ...formData, promo_name: e.target.value })}
@@ -405,18 +303,18 @@ function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: Pr
 
                     {/* 2. Target Selection (Multi-Select) */}
                     <div className="space-y-4">
-                        <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                            Target Products / Kits <span className="text-red-500">*</span>
-                            <span className="text-xs font-normal text-slate-400">(Search by Name to Add to List)</span>
+                        <label className="text-sm font-bold text-foreground flex items-center gap-2">
+                            Target Products / Kits <span className="text-destructive">*</span>
+                            <span className="text-xs font-normal text-muted-foreground">(Search by Name to Add to List)</span>
                         </label>
 
                         {/* Selected Targets List */}
-                        <div className="flex flex-wrap gap-2 min-h-[40px] p-2 border border-slate-200 rounded-lg bg-slate-50/50">
+                        <div className="flex flex-wrap gap-2 min-h-[40px] p-2 border border-border rounded-lg bg-muted/30">
                             {(!formData.target_kit_ids || formData.target_kit_ids.length === 0) && (
-                                <span className="text-sm text-slate-400 p-1">No products selected. Search to add.</span>
+                                <span className="text-sm text-muted-foreground p-1">No products selected. Search to add.</span>
                             )}
                             {formData.target_kit_ids?.map((id) => (
-                                <div key={id} className="bg-white border border-blue-200 text-blue-700 px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 shadow-sm animate-in fade-in zoom-in duration-200">
+                                <div key={id} className="bg-background border border-primary/20 text-foreground px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 shadow-sm animate-in fade-in zoom-in duration-200">
                                     <span>{id}</span>
                                     <button
                                         onClick={() => {
@@ -427,7 +325,7 @@ function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: Pr
                                                 target_kit_id: newIds[0] || '' // Sync legacy field
                                             })
                                         }}
-                                        className="text-blue-300 hover:text-red-500 transition-colors"
+                                        className="text-muted-foreground hover:text-destructive transition-colors"
                                     >
                                         <X size={14} />
                                     </button>
@@ -437,20 +335,20 @@ function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: Pr
 
                         {/* Search Input */}
                         <div className="relative">
-                            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                             <input
-                                className="w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-black outline-none"
+                                className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:ring-2 focus:ring-ring outline-none bg-background"
                                 placeholder="Type product name to search..."
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                             />
                             {/* Dropdown Results */}
                             {showResults && searchResults.length > 0 && (
-                                <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                                <div className="absolute z-20 w-full mt-1 bg-popover border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto">
                                     {searchResults.map(res => (
                                         <button
                                             key={res.code + res.name}
-                                            className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-50 last:border-0 flex justify-between group"
+                                            className="w-full text-left px-4 py-3 hover:bg-muted border-b border-border last:border-0 flex justify-between group"
                                             onClick={() => {
                                                 const currentIds = formData.target_kit_ids || []
                                                 if (!currentIds.includes(res.code)) {
@@ -465,8 +363,8 @@ function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: Pr
                                                 setShowResults(false)
                                             }}
                                         >
-                                            <span className="font-medium text-slate-700 truncate group-hover:text-blue-600 transition-colors">{res.name}</span>
-                                            <span className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 ml-2">{res.code}</span>
+                                            <span className="font-medium text-foreground truncate group-hover:text-primary transition-colors">{res.name}</span>
+                                            <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground ml-2">{res.code}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -475,24 +373,24 @@ function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: Pr
                     </div>
 
                     {/* 3. Gift Configuration */}
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
-                        <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <div className="bg-muted/40 p-4 rounded-xl border border-border space-y-4">
+                        <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                             <Gift className="h-4 w-4" /> Gift Logic
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase">Gift Kit ID</label>
+                                <label className="text-xs font-bold text-muted-foreground uppercase">Gift Kit ID</label>
                                 <input
-                                    className="w-full p-2 border rounded bg-white"
+                                    className="w-full p-2 border border-border rounded bg-background"
                                     placeholder="e.g. GIFT_SAMPLE_01"
                                     value={formData.gift_kit_id || ''}
                                     onChange={e => setFormData({ ...formData, gift_kit_id: e.target.value })}
                                 />
                             </div>
                             <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase">Type</label>
+                                <label className="text-xs font-bold text-muted-foreground uppercase">Type</label>
                                 <select
-                                    className="w-full p-2 border rounded bg-white"
+                                    className="w-full p-2 border border-border rounded bg-background"
                                     value={formData.promo_type}
                                     onChange={e => {
                                         const type = e.target.value as any
@@ -509,19 +407,19 @@ function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: Pr
                                 </select>
                             </div>
                             <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase">Buy Condition (N)</label>
+                                <label className="text-xs font-bold text-muted-foreground uppercase">Buy Condition (N)</label>
                                 <input
                                     type="number"
-                                    className="w-full p-2 border rounded bg-white"
+                                    className="w-full p-2 border border-border rounded bg-background"
                                     value={formData.condition_qty || 1}
                                     onChange={e => setFormData({ ...formData, condition_qty: parseInt(e.target.value) })}
                                 />
                             </div>
                             <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase">Gift Amount (M)</label>
+                                <label className="text-xs font-bold text-muted-foreground uppercase">Gift Amount (M)</label>
                                 <input
                                     type="number"
-                                    className={`w-full p-2 border rounded ${formData.promo_type === 'PRICE_ONLY' ? 'bg-slate-100 text-slate-400' : 'bg-white'}`}
+                                    className={`w-full p-2 border border-border rounded ${formData.promo_type === 'PRICE_ONLY' ? 'bg-muted text-muted-foreground' : 'bg-background'}`}
                                     value={formData.gift_qty || 0}
                                     disabled={formData.promo_type === 'PRICE_ONLY'}
                                     onChange={e => setFormData({ ...formData, gift_qty: parseInt(e.target.value) })}
@@ -533,19 +431,19 @@ function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: Pr
                     {/* 4. Dates */}
                     <div className="grid grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-700">Start Date</label>
+                            <label className="text-sm font-bold text-foreground">Start Date</label>
                             <input
                                 type="date"
-                                className="w-full p-2.5 border rounded-lg"
+                                className="w-full p-2.5 border border-border rounded-lg bg-background"
                                 value={formData.start_date as string}
                                 onChange={e => setFormData({ ...formData, start_date: e.target.value })}
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-700">End Date</label>
+                            <label className="text-sm font-bold text-foreground">End Date</label>
                             <input
                                 type="date"
-                                className="w-full p-2.5 border rounded-lg"
+                                className="w-full p-2.5 border border-border rounded-lg bg-background"
                                 value={formData.end_date as string}
                                 onChange={e => setFormData({ ...formData, end_date: e.target.value })}
                             />
@@ -553,9 +451,9 @@ function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: Pr
                     </div>
                 </div>
 
-                <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-xl sticky bottom-0">
-                    <button onClick={onClose} className="px-6 py-2.5 font-bold text-slate-500 hover:text-black hover:bg-white rounded-lg transition-colors">Cancel</button>
-                    <button onClick={handleSubmit} disabled={loading} className="px-6 py-2.5 bg-black text-white rounded-lg font-bold hover:bg-slate-800 transition-colors shadow-lg shadow-blue-100 disabled:opacity-50">
+                <div className="p-6 border-t border-border bg-muted/40 flex justify-end gap-3 rounded-b-[var(--radius)] sticky bottom-0">
+                    <button onClick={onClose} className="px-6 py-2.5 font-bold text-muted-foreground hover:text-foreground hover:bg-card border border-transparent hover:border-border rounded-lg transition-colors">Cancel</button>
+                    <button onClick={handleSubmit} disabled={loading} className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 disabled:opacity-50">
                         {loading ? 'Saving...' : (isEdit ? 'Update Rule' : 'Create Rule')}
                     </button>
                 </div>

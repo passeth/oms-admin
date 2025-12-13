@@ -185,33 +185,33 @@ export function OrderUploader({ compact = false }: OrderUploaderProps) {
         <div className={compact ? "w-full" : "w-full max-w-2xl mx-auto"}>
             <div
                 className={`
-          relative border-2 border-dashed rounded-lg ${compact ? 'p-6' : 'p-12'} text-center transition-all cursor-pointer
-          ${isDragging ? 'border-blue-500 bg-blue-50/10' : 'border-gray-300 dark:border-gray-700'}
+          relative border-2 border-dashed rounded-lg ${compact ? 'p-3' : 'p-12'} text-center transition-all cursor-pointer
+          ${isDragging ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/50'}
           ${isUploading ? 'opacity-50 pointer-events-none' : ''}
         `}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
             >
-                <div className="flex flex-col items-center gap-4">
-                    <div className={`p-4 rounded-full ${status === 'success' ? 'bg-green-100 text-green-600' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
+                <div className={`flex items-center gap-4 ${compact ? 'flex-row' : 'flex-col'}`}>
+                    <div className={`rounded-full flex items-center justify-center ${compact ? 'p-2' : 'p-4'} ${status === 'success' ? 'bg-green-100 text-green-600' : 'bg-muted text-muted-foreground'}`}>
                         {isUploading ? (
-                            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                            <Loader2 className={`${compact ? 'h-5 w-5' : 'h-8 w-8'} animate-spin text-primary`} />
                         ) : status === 'success' ? (
-                            <Check className="h-8 w-8" />
+                            <Check className={`${compact ? 'h-5 w-5' : 'h-8 w-8'}`} />
                         ) : status === 'error' ? (
-                            <AlertCircle className="h-8 w-8 text-red-500" />
+                            <AlertCircle className={`${compact ? 'h-5 w-5' : 'h-8 w-8'} text-destructive`} />
                         ) : (
-                            <Upload className="h-8 w-8" />
+                            <Upload className={`${compact ? 'h-5 w-5' : 'h-8 w-8'}`} />
                         )}
                     </div>
 
-                    <div className="space-y-2">
-                        <h3 className="text-lg font-semibold">
-                            {isUploading ? 'Processing...' : 'Upload Orders'}
+                    <div className={`space-y-1 ${compact ? 'text-left' : ''}`}>
+                        <h3 className={`${compact ? 'text-sm' : 'text-lg'} font-semibold text-foreground`}>
+                            {isUploading ? 'Processing...' : (compact ? 'Upload New Orders' : 'Upload Orders')}
                         </h3>
-                        <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                            Drag and drop your Excel/CSV file here, or click to browse.
+                        <p className={`text-sm text-muted-foreground ${compact ? 'whitespace-nowrap' : 'max-w-xs mx-auto'}`}>
+                            {compact ? 'Drag files here or click' : 'Drag and drop your Excel/CSV file here, or click to browse.'}
                         </p>
                     </div>
                 </div>
@@ -230,7 +230,7 @@ export function OrderUploader({ compact = false }: OrderUploaderProps) {
             </div>
 
             {message && (
-                <div className={`mt-4 p-4 rounded-lg text-sm flex items-center gap-2 ${status === 'error' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
+                <div className={`mt-4 p-4 rounded-lg text-sm flex items-center gap-2 ${status === 'error' ? 'bg-destructive/10 text-destructive' : 'bg-green-50 text-green-600'
                     }`}>
                     {status === 'error' ? <AlertCircle className="h-4 w-4" /> : <Check className="h-4 w-4" />}
                     {message}
