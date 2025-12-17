@@ -339,47 +339,79 @@ function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: Pr
                                 onChange={e => setSearchQuery(e.target.value)}
                             />
                             {/* Dropdown Results */}
-                            {showResults && searchResults.length > 0 && (
+                            {searchQuery.length > 0 && (
                                 <div className="absolute z-20 w-full mt-1 bg-popover border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto">
-                                    <div className="p-2 border-b border-border bg-muted/30 text-xs font-bold text-muted-foreground flex justify-between items-center sticky top-0 backdrop-blur-sm">
-                                        <span>Select multiple items...</span>
-                                        <button onClick={() => setShowResults(false)} className="hover:text-foreground"><X size={14} /></button>
+                                    <div className="p-2 border-b border-border bg-muted/30 text-xs font-bold text-muted-foreground flex justify-between items-center sticky top-0 backdrop-blur-sm z-10">
+                                        <span>Results for "{searchQuery}"</span>
+                                        <button onClick={() => { setSearchQuery(''); setShowResults(false); }} className="hover:text-foreground"><X size={14} /></button>
                                     </div>
-                                    {searchResults.map(res => {
-                                        const isSelected = (formData.target_kit_ids || []).includes(res.code)
-                                        return (
-                                            <button
-                                                key={res.code + res.name}
-                                                className={`w-full text-left px-4 py-3 border-b border-border last:border-0 flex justify-between items-center group transition-colors ${isSelected ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-muted'}`}
-                                                onClick={() => {
-                                                    const currentIds = formData.target_kit_ids || []
-                                                    let newIds
-                                                    if (isSelected) {
-                                                        newIds = currentIds.filter(id => id !== res.code)
-                                                    } else {
-                                                        newIds = [...currentIds, res.code]
-                                                    }
-                                                    setFormData({
-                                                        ...formData,
-                                                        target_kit_ids: newIds,
-                                                        target_kit_id: newIds[0] || ''
-                                                    })
-                                                    // Do NOT close the dropdown
-                                                }}
-                                            >
-                                                <div className="flex items-center gap-3 overflow-hidden">
-                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30'}`}>
-                                                        {isSelected && <Check size={10} />}
+
+                                    {/* Direct Add Option */}
+                                    <button
+                                        className="w-full text-left px-4 py-3 border-b border-border hover:bg-muted flex flex-col gap-1 group bg-primary/5"
+                                        onClick={() => {
+                                            const codeToAdd = searchQuery.trim()
+                                            if (!codeToAdd) return
+                                            const currentIds = formData.target_kit_ids || []
+                                            if (!currentIds.includes(codeToAdd)) {
+                                                const newIds = [...currentIds, codeToAdd]
+                                                setFormData({
+                                                    ...formData,
+                                                    target_kit_ids: newIds,
+                                                    target_kit_id: newIds[0] || ''
+                                                })
+                                            }
+                                            setSearchQuery('')
+                                            setShowResults(false)
+                                        }}
+                                    >
+                                        <div className="flex items-center gap-2 text-primary font-bold">
+                                            <Plus size={14} />
+                                            <span>Add "{searchQuery}" directly</span>
+                                        </div>
+                                        <span className="text-xs text-muted-foreground">Use this if the product code doesn't exist in search.</span>
+                                    </button>
+
+                                    {searchResults.length > 0 ? (
+                                        searchResults.map(res => {
+                                            const isSelected = (formData.target_kit_ids || []).includes(res.code)
+                                            return (
+                                                <button
+                                                    key={res.code + res.name}
+                                                    className={`w-full text-left px-4 py-3 border-b border-border last:border-0 flex justify-between items-center group transition-colors ${isSelected ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-muted'}`}
+                                                    onClick={() => {
+                                                        const currentIds = formData.target_kit_ids || []
+                                                        let newIds
+                                                        if (isSelected) {
+                                                            newIds = currentIds.filter(id => id !== res.code)
+                                                        } else {
+                                                            newIds = [...currentIds, res.code]
+                                                        }
+                                                        setFormData({
+                                                            ...formData,
+                                                            target_kit_ids: newIds,
+                                                            target_kit_id: newIds[0] || ''
+                                                        })
+                                                    }}
+                                                >
+                                                    <div className="flex items-center gap-3 overflow-hidden">
+                                                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30'}`}>
+                                                            {isSelected && <Check size={10} />}
+                                                        </div>
+                                                        <div className="flex flex-col overflow-hidden">
+                                                            <span className={`font-medium truncate transition-colors ${isSelected ? 'text-primary' : 'text-foreground'}`}>{res.name}</span>
+                                                            <span className="text-xs font-mono text-muted-foreground">{res.code}</span>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex flex-col overflow-hidden">
-                                                        <span className={`font-medium truncate transition-colors ${isSelected ? 'text-primary' : 'text-foreground'}`}>{res.name}</span>
-                                                        <span className="text-xs font-mono text-muted-foreground">{res.code}</span>
-                                                    </div>
-                                                </div>
-                                                {res.platform && <span className="text-[10px] uppercase bg-muted px-1.5 py-0.5 rounded text-muted-foreground flex-shrink-0 ml-2">{res.platform}</span>}
-                                            </button>
-                                        )
-                                    })}
+                                                    {res.platform && <span className="text-[10px] uppercase bg-muted px-1.5 py-0.5 rounded text-muted-foreground flex-shrink-0 ml-2">{res.platform}</span>}
+                                                </button>
+                                            )
+                                        })
+                                    ) : (
+                                        <div className="p-4 text-center text-sm text-muted-foreground">
+                                            No products found. Use the add button above to add manually.
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
