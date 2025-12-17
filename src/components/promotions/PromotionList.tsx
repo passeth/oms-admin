@@ -217,7 +217,7 @@ function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: Pr
 
     // Search State
     const [searchQuery, setSearchQuery] = useState('')
-    const [searchResults, setSearchResults] = useState<{ name: string, code: string }[]>([])
+    const [searchResults, setSearchResults] = useState<{ name: string, code: string, platform?: string }[]>([])
     const [showResults, setShowResults] = useState(false)
 
     // Debounced Search
@@ -341,28 +341,45 @@ function PromoFormOverlay({ initialData, platforms, onClose }: { initialData: Pr
                             {/* Dropdown Results */}
                             {showResults && searchResults.length > 0 && (
                                 <div className="absolute z-20 w-full mt-1 bg-popover border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto">
-                                    {searchResults.map(res => (
-                                        <button
-                                            key={res.code + res.name}
-                                            className="w-full text-left px-4 py-3 hover:bg-muted border-b border-border last:border-0 flex justify-between group"
-                                            onClick={() => {
-                                                const currentIds = formData.target_kit_ids || []
-                                                if (!currentIds.includes(res.code)) {
-                                                    const newIds = [...currentIds, res.code]
+                                    <div className="p-2 border-b border-border bg-muted/30 text-xs font-bold text-muted-foreground flex justify-between items-center sticky top-0 backdrop-blur-sm">
+                                        <span>Select multiple items...</span>
+                                        <button onClick={() => setShowResults(false)} className="hover:text-foreground"><X size={14} /></button>
+                                    </div>
+                                    {searchResults.map(res => {
+                                        const isSelected = (formData.target_kit_ids || []).includes(res.code)
+                                        return (
+                                            <button
+                                                key={res.code + res.name}
+                                                className={`w-full text-left px-4 py-3 border-b border-border last:border-0 flex justify-between items-center group transition-colors ${isSelected ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-muted'}`}
+                                                onClick={() => {
+                                                    const currentIds = formData.target_kit_ids || []
+                                                    let newIds
+                                                    if (isSelected) {
+                                                        newIds = currentIds.filter(id => id !== res.code)
+                                                    } else {
+                                                        newIds = [...currentIds, res.code]
+                                                    }
                                                     setFormData({
                                                         ...formData,
                                                         target_kit_ids: newIds,
-                                                        target_kit_id: newIds[0] || '' // Sync legacy
+                                                        target_kit_id: newIds[0] || ''
                                                     })
-                                                }
-                                                setSearchQuery('')
-                                                setShowResults(false)
-                                            }}
-                                        >
-                                            <span className="font-medium text-foreground truncate group-hover:text-primary transition-colors">{res.name}</span>
-                                            <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground ml-2">{res.code}</span>
-                                        </button>
-                                    ))}
+                                                    // Do NOT close the dropdown
+                                                }}
+                                            >
+                                                <div className="flex items-center gap-3 overflow-hidden">
+                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30'}`}>
+                                                        {isSelected && <Check size={10} />}
+                                                    </div>
+                                                    <div className="flex flex-col overflow-hidden">
+                                                        <span className={`font-medium truncate transition-colors ${isSelected ? 'text-primary' : 'text-foreground'}`}>{res.name}</span>
+                                                        <span className="text-xs font-mono text-muted-foreground">{res.code}</span>
+                                                    </div>
+                                                </div>
+                                                {res.platform && <span className="text-[10px] uppercase bg-muted px-1.5 py-0.5 rounded text-muted-foreground flex-shrink-0 ml-2">{res.platform}</span>}
+                                            </button>
+                                        )
+                                    })}
                                 </div>
                             )}
                         </div>

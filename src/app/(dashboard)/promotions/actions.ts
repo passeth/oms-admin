@@ -76,7 +76,7 @@ export async function searchProducts(query: string, platform?: string) {
     let queryBuilder = supabase
         .from('cm_products_master')
         .select('product_name, site_product_code, platform_name')
-        .ilike('product_name', `%${query}%`)
+        .or(`product_name.ilike.%${query}%,site_product_code.ilike.%${query}%`)
         .limit(50)
 
     // Apply platform filter if provided
