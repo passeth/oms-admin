@@ -54,8 +54,10 @@ export function ProcessingTable({
         option: 400,
         kit: 140,
         qty: 80,
+        collected_at: 140,
         ordered_at: 140,
-        paid_at: 140
+        paid_at: 140,
+        actions: 100
     })
     const [resizingCol, setResizingCol] = useState<string | null>(null)
     const [resizeStartX, setResizeStartX] = useState<number | null>(null)
@@ -412,6 +414,10 @@ export function ProcessingTable({
                                     <div className="flex items-center">수량 <SortIcon field="qty" /></div>
                                     <Resizer col="qty" />
                                 </th>
+                                <th style={{ width: colWidths.collected_at }} onClick={() => handleSort('collected_at')} className="px-4 py-4 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-100 relative group">
+                                    <div className="flex items-center">수집일 <SortIcon field="collected_at" /></div>
+                                    <Resizer col="collected_at" />
+                                </th>
                                 <th style={{ width: colWidths.ordered_at }} onClick={() => handleSort('ordered_at')} className="px-4 py-4 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-100 relative group">
                                     <div className="flex items-center">주문일시 <SortIcon field="ordered_at" /></div>
                                     <Resizer col="ordered_at" />
@@ -420,11 +426,14 @@ export function ProcessingTable({
                                     <div className="flex items-center">결제일시 <SortIcon field="paid_at" /></div>
                                     <Resizer col="paid_at" />
                                 </th>
+                                <th style={{ width: colWidths.actions }} className="px-4 py-4 text-center border-b border-border relative">
+                                    관리
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
                             {initialOrders.length === 0 ? (
-                                <tr><td colSpan={8} className="px-6 py-16 text-center text-muted-foreground">신규 주문이 없습니다.</td></tr>
+                                <tr><td colSpan={9} className="px-6 py-16 text-center text-muted-foreground">신규 주문이 없습니다.</td></tr>
                             ) : (
                                 initialOrders.map((row) => {
                                     // Highlight Logic: If no matched_kit_id, show Amber/Red row
@@ -448,17 +457,37 @@ export function ProcessingTable({
                                                 <>
                                                     <td className="px-2 py-2 border-r border-border">{row.platform_name}</td>
                                                     <td className="px-2 py-2 border-r border-border truncate text-xs">{row.product_name}</td>
-                                                    <td className="px-2 py-2 border-r border-border"><input className="w-full p-1 border rounded" value={editForm.option_text || ''} onChange={e => setEditForm({ ...editForm, option_text: e.target.value })} /></td>
-                                                    <td className="px-2 py-2 border-r border-border"><input className="w-full p-1 border rounded" value={editForm.matched_kit_id || ''} onChange={e => setEditForm({ ...editForm, matched_kit_id: e.target.value })} /></td>
-                                                    <td className="px-2 py-2 border-r border-border"><input type="number" className="w-full p-1 border rounded" value={editForm.qty || 1} onChange={e => setEditForm({ ...editForm, qty: parseInt(e.target.value) })} /></td>
+                                                    <td className="px-2 py-2 border-r border-border"><input className="w-full p-1 border rounded" value={editForm.option_text || ''} onChange={e => setEditForm({ ...editForm, option_text: e.target.value })} onKeyDown={e => e.key === 'Enter' && saveEdit()} onBlur={saveEdit} /></td>
+                                                    <td className="px-2 py-2 border-r border-border"><input className="w-full p-1 border rounded" value={editForm.matched_kit_id || ''} onChange={e => setEditForm({ ...editForm, matched_kit_id: e.target.value })} onKeyDown={e => e.key === 'Enter' && saveEdit()} onBlur={saveEdit} /></td>
+                                                    <td className="px-2 py-2 border-r border-border"><input type="number" className="w-full p-1 border rounded" value={editForm.qty || 1} onChange={e => setEditForm({ ...editForm, qty: parseInt(e.target.value) })} onKeyDown={e => e.key === 'Enter' && saveEdit()} onBlur={saveEdit} /></td>
+                                                    <td className="px-2 py-2 border-r border-border text-xs text-muted-foreground">{row.collected_at ? row.collected_at.replace(/[\[\]]/g, '') : '-'}</td>
                                                     <td className="px-2 py-2 border-r border-border text-xs">{row.ordered_at ? row.ordered_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}</td>
                                                     <td className="px-2 py-2 border-r border-border text-xs">{row.paid_at ? row.paid_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}</td>
+                                                    <td className="px-2 py-2 text-center">
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            <button onClick={saveEdit} className="p-1 hover:bg-green-100 text-green-600 rounded"><Check size={16} /></button>
+                                                            <button onClick={cancelEdit} className="p-1 hover:bg-slate-100 text-slate-500 rounded"><X size={16} /></button>
+                                                        </div>
+                                                    </td>
                                                 </>
                                             ) : (
                                                 <>
                                                     <td className="px-4 py-2 border-r border-border text-foreground font-medium whitespace-nowrap overflow-hidden text-ellipsis">{row.platform_name}</td>
-                                                    <td className="px-4 py-2 border-r border-border text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={row.product_name || ''}>{row.product_name}</td>
-                                                    <td className="px-4 py-2 border-r border-border text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis" title={row.option_text || ''}>{row.option_text}</td>
+                                                    <td
+                                                        className="px-4 py-2 border-r border-border text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis select-text cursor-text"
+                                                        title={row.product_name || ''}
+                                                        onMouseDown={(e) => e.stopPropagation()}
+                                                    >
+                                                        {row.product_name}
+                                                    </td>
+                                                    <td
+                                                        className="px-4 py-2 border-r border-border text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis select-text cursor-text hover:bg-yellow-50 hover:text-foreground transition-colors"
+                                                        title="더블클릭하여 수정"
+                                                        onDoubleClick={() => startEdit(row)}
+                                                        onMouseDown={(e) => e.stopPropagation()}
+                                                    >
+                                                        {row.option_text}
+                                                    </td>
                                                     <td
                                                         className={`px-4 py-2 border-r border-border font-mono text-xs whitespace-nowrap overflow-hidden text-ellipsis font-bold cursor-pointer group-hover:bg-primary/5 transition-colors ${isKitEditing ? 'bg-primary/10 ring-2 ring-inset ring-ring' : ''}`}
                                                         onClick={(e) => openKitEditor(e, row)}
@@ -470,10 +499,19 @@ export function ProcessingTable({
                                                     </td>
                                                     <td className="px-4 py-2 border-r border-border font-bold">{row.qty}</td>
                                                     <td className="px-4 py-2 border-r border-border text-xs text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">
+                                                        {row.collected_at ? row.collected_at.replace(/[\[\]]/g, '') : '-'}
+                                                    </td>
+                                                    <td className="px-4 py-2 border-r border-border text-xs text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">
                                                         {row.ordered_at ? row.ordered_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}
                                                     </td>
                                                     <td className="px-4 py-2 border-r border-border text-xs text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">
                                                         {row.paid_at ? row.paid_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}
+                                                    </td>
+                                                    <td className="px-2 py-2 text-center">
+                                                        <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button onClick={() => startEdit(row)} className="p-1 hover:bg-slate-100 text-slate-500 rounded"><Edit2 size={16} /></button>
+                                                            <button onClick={() => handleDelete(row.id)} className="p-1 hover:bg-red-100 text-red-500 rounded"><Trash2 size={16} /></button>
+                                                        </div>
                                                     </td>
                                                 </>
                                             )}

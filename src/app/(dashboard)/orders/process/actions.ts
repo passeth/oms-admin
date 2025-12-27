@@ -94,3 +94,21 @@ export async function finalizeProcessedOrders(ids: number[]) {
     revalidatePath('/orders')
     return { success: true }
 }
+
+// Fetch Export History
+export async function getExportHistory() {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from('cm_export_history')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20) // Latest 20
+
+    if (error) {
+        console.error('Error fetching export history:', error)
+        return []
+    }
+
+    return data
+}

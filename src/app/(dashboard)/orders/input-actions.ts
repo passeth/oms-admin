@@ -24,16 +24,28 @@ export async function searchKits(query: string) {
 export async function createRule(rawIdentifier: string, kitId: string) {
     const supabase = await createClient()
 
-    const { error } = await supabase
+    // 1. Create/Update Rule
+    const { error: ruleError } = await supabase
         .from('cm_raw_mapping_rules')
         .upsert({
             raw_identifier: rawIdentifier,
             kit_id: kitId
         }, { onConflict: 'raw_identifier' })
 
-    if (error) {
-        console.error("Error creating/updating rule:", error)
-        throw new Error(error.message)
+    if (ruleError) {
+        console.error("Error creating/updating rule:", ruleError)
+        throw new Error(ruleError.message)
+    }
+
+    // 2. Apply Rule to Existing Pending Orders
+    const { error: updateError } = await supabase.rpc('apply_mapping_rule', {
+        _raw_identifier: rawIdentifier,
+        _kit_id: kitId
+    })
+
+    if (updateError) {
+        console.error("Error applying rule to existing orders:", updateError)
+        // We don't throw here, as the rule itself was saved. Ideally show a warning.
     }
 
     return { success: true }

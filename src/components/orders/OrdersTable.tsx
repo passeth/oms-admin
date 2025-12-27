@@ -39,6 +39,7 @@ export function OrdersTable({
         option: 250,
         kit: 120,
         qty: 80,
+        collected_at: 140,
         paid_at: 140,
         actions: 100
     })
@@ -312,6 +313,14 @@ export function OrdersTable({
                                     <Resizer col="qty" />
                                 </th>
 
+                                {/* 6.5. Collected At (New) */}
+                                <th style={{ width: colWidths.collected_at }} onClick={() => handleSort('collected_at')} className="px-4 py-4 cursor-pointer hover:bg-muted/80 border-b border-r border-border relative group">
+                                    <div className="flex items-center justify-between">
+                                        <span>Collected At</span> <SortIcon field="collected_at" />
+                                    </div>
+                                    <Resizer col="collected_at" />
+                                </th>
+
                                 {/* 7. Paid Date */}
                                 <th style={{ width: colWidths.paid_at }} onClick={() => handleSort('paid_at')} className="px-4 py-4 cursor-pointer hover:bg-muted/80 border-b border-r border-border relative group">
                                     <div className="flex items-center justify-between">
@@ -328,7 +337,7 @@ export function OrdersTable({
                         </thead>
                         <tbody className="divide-y divide-border">
                             {initialOrders.length === 0 ? (
-                                <tr><td colSpan={8} className="px-6 py-16 text-center text-muted-foreground">No data found.</td></tr>
+                                <tr><td colSpan={9} className="px-6 py-16 text-center text-muted-foreground">No data found.</td></tr>
                             ) : (
                                 initialOrders.map((row) => (
                                     <tr key={row.id} className={`hover:bg-muted/50 transition-colors ${selectedIds.has(row.id) ? 'bg-primary/5' : ''}`}>
@@ -354,6 +363,7 @@ export function OrdersTable({
                                                 <td className="px-2 py-2 border-r border-border">
                                                     <input type="number" className="w-full p-1 border rounded bg-primary/5" value={editForm.qty || 1} onChange={e => setEditForm({ ...editForm, qty: parseInt(e.target.value) })} />
                                                 </td>
+                                                <td className="px-2 py-2 border-r border-border text-xs text-muted-foreground">{row.collected_at ? row.collected_at.replace(/[\[\]]/g, '') : '-'}</td>
                                                 <td className="px-2 py-2 border-r border-border text-xs">{row.paid_at ? row.paid_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}</td>
                                                 <td className="px-2 py-2 text-right">
                                                     <div className="flex justify-end gap-1">
@@ -372,6 +382,9 @@ export function OrdersTable({
                                                     {row.matched_kit_id || <span className="text-destructive/70">Unmatched</span>}
                                                 </td>
                                                 <td className="px-4 py-2 border-r border-border font-bold">{row.qty}</td>
+                                                <td className="px-4 py-2 border-r border-border text-xs text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">
+                                                    {row.collected_at ? row.collected_at.replace(/[\[\]]/g, '') : '-'}
+                                                </td>
                                                 <td className="px-4 py-2 border-r border-border text-xs text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">
                                                     {row.paid_at ? row.paid_at.replace(/[\[\]]/g, '').substring(0, 10) : '-'}
                                                 </td>

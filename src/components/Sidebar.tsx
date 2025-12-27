@@ -17,7 +17,8 @@ import {
     Link2,
     TrendingUp,
     Database,
-    FileBarChart
+    FileBarChart,
+    FileSpreadsheet
 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -36,6 +37,7 @@ const navGroups = [
             { name: '품목코드 매칭', href: '/inventory/boms', icon: Boxes },
             { name: 'ERP 재고', href: '/inventory/products', icon: Package },
             { name: '출고 현황', href: '/orders/dispatch', icon: Truck },
+            { name: '엑셀 백업', href: '/orders/history', icon: FileSpreadsheet },
             { name: 'User Guide', href: '/guide', icon: HelpCircle },
         ]
     },

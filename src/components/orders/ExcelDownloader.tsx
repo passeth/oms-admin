@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Download, Loader2, CheckCircle } from 'lucide-react'
+import { Download, Loader2, CheckCircle, Clock } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { exportOrdersForExcel, finalizeProcessedOrders } from '@/app/(dashboard)/orders/process/actions'
+import { createClient } from '@/utils/supabase/client'
+import Link from 'next/link'
 
 interface ExcelDownloaderProps {
     compact?: boolean
@@ -82,11 +84,43 @@ export function ExcelDownloader({ compact = false }: ExcelDownloaderProps) {
             const wb = XLSX.utils.book_new()
             XLSX.utils.book_append_sheet(wb, ws, "Processed_Orders")
 
-            // 3. Download
-            const fileName = `Orders_Output_${new Date().toISOString().slice(0, 10)}.xlsx`
+            // 3. Upload to Storage & Log History (New Feature)
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+            const fileName = `Order_Export_${timestamp.slice(0, 19)}.xlsx`
+
+            try {
+                const supabase = createClient()
+                const fileData = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+                const blob = new Blob([fileData], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+
+                // Upload
+                const { error: uploadError } = await supabase.storage
+                    .from('order_exports')
+                    .upload(fileName, blob, { upsert: true })
+
+                if (!uploadError) {
+                    // Get URL
+                    const { data: { publicUrl } } = supabase.storage.from('order_exports').getPublicUrl(fileName)
+
+                    // Log to DB
+                    await supabase.from('cm_export_history').insert({
+                        file_name: fileName,
+                        file_url: publicUrl,
+                        file_size: blob.size,
+                        row_count: orders.length
+                    })
+                } else {
+                    console.warn('Failed to upload export file:', uploadError)
+                    // Don't block download
+                }
+            } catch (storageErr) {
+                console.error('Storage logic error:', storageErr)
+            }
+
+            // 4. Download Locally
             XLSX.writeFile(wb, fileName)
 
-            // 4. Finalize (Ask user?)
+            // 5. Finalize (Ask user?)
             if (confirm(`Downloaded ${orders.length} orders.\nMark them as DONE?`)) {
                 const ids = orders.map(o => o.id)
                 const res = await finalizeProcessedOrders(ids)
@@ -121,9 +155,21 @@ export function ExcelDownloader({ compact = false }: ExcelDownloaderProps) {
                     <h3 className={`${compact ? 'text-sm' : 'text-lg'} font-bold text-slate-700`}>
                         {compact ? 'Download Final Excel' : 'Download Final Excel'}
                     </h3>
-                    <p className={`text-sm text-slate-500 ${compact ? 'line-clamp-1' : ''}`}>
-                        {compact ? 'Export & Finalize orders' : 'Export processed orders and mark as done.'}
-                    </p>
+                    <div className="flex items-center gap-2">
+                        <p className={`text-sm text-slate-500 ${compact ? 'line-clamp-1' : ''}`}>
+                            {compact ? 'Export & Finalize orders' : 'Export processed orders and mark as done.'}
+                        </p>
+                        {/* History Trigger (Compact) */}
+                        {compact && (
+                            <Link
+                                href="/orders/history"
+                                className="text-xs text-blue-600 hover:text-blue-800 underline flex items-center gap-1 ml-2"
+                            >
+                                <Clock className="w-3 h-3" />
+                                History
+                            </Link>
+                        )}
+                    </div>
                 </div>
 
                 {/* Button (Only for Compact: Rendered inside the flex row, for Standard: Rendered below) */}
@@ -140,14 +186,29 @@ export function ExcelDownloader({ compact = false }: ExcelDownloaderProps) {
 
                 {/* Button for Non-Compact Mode */}
                 {!compact && (
-                    <Button
-                        onClick={handleDownload}
-                        disabled={loading}
-                        className="w-full bg-green-600 hover:bg-green-700 font-bold"
-                    >
-                        {loading ? <Loader2 className="animate-spin mr-2" /> : <Download className="mr-2 w-4 h-4" />}
-                        {loading ? 'Exporting...' : 'Download & Finalize'}
-                    </Button>
+                    <div className="w-full space-y-3">
+                        <Button
+                            onClick={handleDownload}
+                            disabled={loading}
+                            className="w-full bg-green-600 hover:bg-green-700 font-bold"
+                        >
+                            {loading ? <Loader2 className="animate-spin mr-2" /> : <Download className="mr-2 w-4 h-4" />}
+                            {loading ? 'Exporting...' : 'Download & Finalize'}
+                        </Button>
+                        <Link
+                            href="/orders/history"
+                            passHref
+                            className="block w-full"
+                        >
+                            <Button
+                                variant="outline"
+                                className="w-full text-slate-500"
+                            >
+                                <Clock className="mr-2 w-4 h-4" />
+                                View History
+                            </Button>
+                        </Link>
+                    </div>
                 )}
             </div>
         </div>
