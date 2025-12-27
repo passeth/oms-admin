@@ -263,7 +263,12 @@ export default function DashboardPage() {
         </h3>
         {/* Unconstrained Height Calendar */}
         <div className="w-full">
-          <CalendarView rules={promoRules} stats={promoStats} mode="month" isReadOnly={true} />
+          <CalendarView
+            rules={promoRules}
+            stats={promoStats}
+            mode="month"
+            isReadOnly={true}
+          />
         </div>
       </section>
 

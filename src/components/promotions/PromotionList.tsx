@@ -15,8 +15,15 @@ export function PromotionList({ initialData }: { initialData: PromoRule[] }) {
     const [view, setView] = useState<ViewMode>('list')
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingRule, setEditingRule] = useState<PromoRule | null>(null)
+    const [selectedPlatform, setSelectedPlatform] = useState<string>('All')
     const [platforms, setPlatforms] = useState<string[]>([])
     const [stats, setStats] = useState<any[]>([])
+
+    // Filter rules by platform
+    const filteredRules = useMemo(() => {
+        if (selectedPlatform === 'All') return initialData
+        return initialData.filter(r => r.platform_name === selectedPlatform)
+    }, [initialData, selectedPlatform])
 
     // Load platforms and stats
     useEffect(() => {
@@ -35,26 +42,56 @@ export function PromotionList({ initialData }: { initialData: PromoRule[] }) {
         getPromoStats().then(setStats) // Refresh stats on close
     }
 
+    const handlePlatformToggle = (platform: string) => {
+        if (selectedPlatform === platform) {
+            setSelectedPlatform('All')
+        } else {
+            setSelectedPlatform(platform)
+        }
+    }
+
     return (
         <div className="space-y-6">
             {/* Header / Controls */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-4 rounded-[var(--radius)] border border-border shadow-sm print:hidden">
-                <div className="flex bg-muted p-1 rounded-lg border border-border">
-                    <button onClick={() => setView('list')} className={`px-3 py-1.5 text-sm font-bold rounded-md flex items-center gap-2 transition-all ${view === 'list' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-                        <ListIcon size={16} /> List
-                    </button>
-                    <button onClick={() => setView('month')} className={`px-3 py-1.5 text-sm font-bold rounded-md flex items-center gap-2 transition-all ${view === 'month' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-                        <Grid size={16} /> Month
-                    </button>
-                    <button onClick={() => setView('week')} className={`px-3 py-1.5 text-sm font-bold rounded-md flex items-center gap-2 transition-all ${view === 'week' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-                        <Clock size={16} /> Week
-                    </button>
+            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-card p-4 rounded-[var(--radius)] border border-border shadow-sm print:hidden">
+                <div className="flex flex-wrap gap-4 w-full xl:w-auto">
+                    {/* View Toggles */}
+                    <div className="flex bg-muted p-1 rounded-lg border border-border">
+                        <button onClick={() => setView('list')} className={`px-3 py-1.5 text-sm font-bold rounded-md flex items-center gap-2 transition-all ${view === 'list' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                            <ListIcon size={16} /> List
+                        </button>
+                        <button onClick={() => setView('month')} className={`px-3 py-1.5 text-sm font-bold rounded-md flex items-center gap-2 transition-all ${view === 'month' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                            <Grid size={16} /> Month
+                        </button>
+                        <button onClick={() => setView('week')} className={`px-3 py-1.5 text-sm font-bold rounded-md flex items-center gap-2 transition-all ${view === 'week' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                            <Clock size={16} /> Week
+                        </button>
+                    </div>
+
+                    {/* Platform Filter */}
+                    <div className="flex overflow-x-auto bg-muted p-1 rounded-lg border border-border max-w-full no-scrollbar">
+                        <button
+                            onClick={() => setSelectedPlatform('All')}
+                            className={`px-3 py-1.5 text-sm font-bold rounded-md whitespace-nowrap transition-all ${selectedPlatform === 'All' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                        >
+                            All Sites
+                        </button>
+                        {platforms.map(p => (
+                            <button
+                                key={p}
+                                onClick={() => handlePlatformToggle(p)}
+                                className={`px-3 py-1.5 text-sm font-bold rounded-md whitespace-nowrap transition-all ${selectedPlatform === p ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                {p}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
-                <div className="flex gap-2 w-full md:w-auto">
+                <div className="flex gap-2 w-full xl:w-auto">
                     <button
                         onClick={() => { setEditingRule(null); setIsFormOpen(true) }}
-                        className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg hover:bg-primary/90 transition shadow-lg shadow-primary/25 font-bold"
+                        className="flex-1 xl:flex-none flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg hover:bg-primary/90 transition shadow-lg shadow-primary/25 font-bold"
                     >
                         <Plus size={16} /> New Rule
                     </button>
@@ -63,9 +100,9 @@ export function PromotionList({ initialData }: { initialData: PromoRule[] }) {
 
             {/* Content View */}
             <div className="bg-card rounded-[var(--radius)] border border-border shadow-sm min-h-[500px]">
-                {view === 'list' && <ListView rules={initialData} stats={stats} onEdit={handleEdit} />}
-                {view === 'month' && <CalendarView rules={initialData} stats={stats} mode="month" onEdit={handleEdit} />}
-                {view === 'week' && <CalendarView rules={initialData} stats={stats} mode="week" onEdit={handleEdit} />}
+                {view === 'list' && <ListView rules={filteredRules} stats={stats} onEdit={handleEdit} />}
+                {view === 'month' && <CalendarView rules={filteredRules} stats={stats} mode="month" onEdit={handleEdit} />}
+                {view === 'week' && <CalendarView rules={filteredRules} stats={stats} mode="week" onEdit={handleEdit} />}
             </div>
 
             {/* Create/Edit Modal */}

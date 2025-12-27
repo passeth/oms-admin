@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { RawOrderLine } from '@/types/database'
 import { updateOrder, deleteOrder, deleteOrders } from '@/app/(dashboard)/orders/actions'
+import { updateStockFromErp } from '@/app/(dashboard)/inventory/products/actions'
 import { searchKits, createRule } from '@/app/(dashboard)/orders/input-actions'
-import { Search, Edit2, Trash2, X, Save, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle, ChevronsUpDown, Check, Plus } from 'lucide-react'
+import { Search, Edit2, Trash2, X, Save, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle, ChevronsUpDown, Check, Plus, RefreshCw } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 export function ProcessingTable({
@@ -27,6 +28,7 @@ export function ProcessingTable({
     // --- 1. FILTER ---
     const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '')
     const [platformFilter, setPlatformFilter] = useState(searchParams.get('platform') || '')
+    const [isApplying, setIsApplying] = useState(false)
 
     // --- 2. UI STATES ---
     const [editId, setEditId] = useState<number | null>(null)
@@ -117,15 +119,30 @@ export function ProcessingTable({
     }, [kitSearchQuery, editingKit])
 
 
-    const applyFilters = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        if (searchTerm) params.set('search', searchTerm)
-        else params.delete('search')
-        if (platformFilter) params.set('platform', platformFilter)
-        else params.delete('platform')
+    const applyFilters = async () => {
+        setIsApplying(true)
+        try {
+            await updateStockFromErp()
 
-        params.set('page', '1')
-        router.push(`/orders/process?${params.toString()}`)
+            const params = new URLSearchParams(searchParams.toString())
+            if (searchTerm) params.set('search', searchTerm)
+            else params.delete('search')
+            if (platformFilter) params.set('platform', platformFilter)
+            else params.delete('platform')
+
+            params.set('page', '1')
+            router.push(`/orders/process?${params.toString()}`)
+        } catch (error) {
+            console.error("Failed to sync stock:", error)
+            alert("재고 동기화 실패. 필터는 그대로 적용됩니다.")
+            // Still navigate? Or show error? let's navigate anyway to not block user
+            const params = new URLSearchParams(searchParams.toString())
+            if (searchTerm) params.set('search', searchTerm)
+            if (platformFilter) params.set('platform', platformFilter)
+            router.push(`/orders/process?${params.toString()}`)
+        } finally {
+            setIsApplying(false)
+        }
     }
 
     const startResize = (e: React.MouseEvent, colKey: string) => {
@@ -167,12 +184,12 @@ export function ProcessingTable({
         router.refresh()
     }
     const handleDelete = async (id: number) => {
-        if (!confirm('Delete order?')) return
+        if (!confirm('주문을 삭제하시겠습니까?')) return
         await deleteOrder(id)
         router.refresh()
     }
     const handleBulkDelete = async () => {
-        if (!confirm(`Delete ${selectedIds.size} orders?`)) return
+        if (!confirm(`${selectedIds.size}개의 주문을 삭제하시겠습니까?`)) return
         await deleteOrders(Array.from(selectedIds))
         setSelectedIds(new Set())
         router.refresh()
@@ -216,7 +233,7 @@ export function ProcessingTable({
                 // alert("Rule Saved!") // Removed alert to be less intrusive, or could add toast later
             } catch (err) {
                 console.error(err)
-                alert("Failed to save rule: " + err)
+                alert("규칙 저장 실패: " + err)
             }
         }
 
@@ -291,11 +308,11 @@ export function ProcessingTable({
             {/* ... (Header and Filters) ... */}
             <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-black tracking-tighter text-foreground">New Order Processing <span className="text-muted-foreground font-medium">({totalCount})</span></h1>
-                    <span className="bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">Action Required</span>
+                    <h1 className="text-2xl font-black tracking-tighter text-foreground">신규 주문 처리 <span className="text-muted-foreground font-medium">({totalCount})</span></h1>
+                    <span className="bg-destructive text-destructive-foreground text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">확인 필요</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                    Processing batch from: <span className="font-mono text-foreground font-bold">{uploadDate ? new Date(uploadDate).toLocaleString() : 'No Recent Upload'}</span>
+                    최근 업로드 일시: <span className="font-mono text-foreground font-bold">{uploadDate ? new Date(uploadDate).toLocaleString() : '최근 업로드 없음'}</span>
                 </p>
             </div>
 
@@ -303,7 +320,7 @@ export function ProcessingTable({
             {unmatchedCount > 0 && (
                 <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center gap-3 text-destructive">
                     <AlertCircle className="h-5 w-5" />
-                    <span className="font-semibold">{unmatchedCount} orders have unmatched options! Please fix them before shipping.</span>
+                    <span className="font-semibold">{unmatchedCount}건의 주문에 매칭되지 않은 옵션이 있습니다! 배송 전에 수정해주세요.</span>
                 </div>
             )}
 
@@ -314,7 +331,7 @@ export function ProcessingTable({
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <input
                             type="text"
-                            placeholder="Receiver, Order No..."
+                            placeholder="수취인, 주문번호 등..."
                             className="w-full pl-9 pr-4 py-2 rounded-lg border border-border bg-background focus:ring-2 focus:ring-ring outline-none"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -329,7 +346,7 @@ export function ProcessingTable({
                         value={platformFilter}
                         onChange={(e) => setPlatformFilter(e.target.value)}
                     >
-                        <option value="">All Platforms</option>
+                        <option value="">모든 플랫폼</option>
                         {platforms.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
                 </div>
@@ -338,27 +355,32 @@ export function ProcessingTable({
                     onClick={toggleUnmatched}
                     className={`px-4 py-2 rounded-lg font-bold border transition-colors ${unmatchedOnly ? 'bg-destructive border-destructive text-destructive-foreground' : 'bg-background border-border text-muted-foreground hover:text-destructive hover:border-destructive/30'}`}
                 >
-                    {unmatchedOnly ? 'Showing Unmatched' : 'Show Unmatched Only'}
+                    {unmatchedOnly ? '매칭 안됨 표시 중' : '매칭 안된 주문만 보기'}
                 </button>
 
                 <button
                     onClick={toggleGift}
                     className={`px-4 py-2 rounded-lg font-bold border transition-colors ${giftOnly ? 'bg-primary border-primary text-primary-foreground' : 'bg-background border-border text-muted-foreground hover:text-primary hover:border-primary/30'}`}
                 >
-                    {giftOnly ? 'Showing Gifts' : 'Show Gifts Only'}
+                    {giftOnly ? '사은품 표시 중' : '사은품만 보기'}
                 </button>
 
-                <button onClick={applyFilters} className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 font-medium h-[42px]">
-                    Apply
+                <button
+                    onClick={applyFilters}
+                    disabled={isApplying}
+                    className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 font-medium h-[42px] flex items-center gap-2 disabled:opacity-70 disabled:cursor-wait"
+                >
+                    {isApplying && <RefreshCw className="h-4 w-4 animate-spin" />}
+                    {isApplying ? '동기화 중...' : '적용'}
                 </button>
             </div>
 
             {/* Bulk Actions */}
             {selectedIds.size > 0 && (
                 <div className="bg-foreground text-background p-3 rounded-lg flex justify-between items-center shadow-lg animate-in fade-in slide-in-from-bottom-2">
-                    <span className="font-semibold ml-2">{selectedIds.size} orders selected</span>
+                    <span className="font-semibold ml-2">{selectedIds.size}개 주문 선택됨</span>
                     <button onClick={handleBulkDelete} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-4 py-1.5 rounded-md text-sm font-bold flex gap-2">
-                        <Trash2 className="h-4 w-4" /> Delete
+                        <Trash2 className="h-4 w-4" /> 삭제
                     </button>
                 </div>
             )}
@@ -374,35 +396,35 @@ export function ProcessingTable({
                                     <Resizer col="checkbox" />
                                 </th>
                                 <th style={{ width: colWidths.platform }} onClick={() => handleSort('platform_name')} className="px-4 py-4 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-100 relative group">
-                                    <div className="flex items-center">Platform <SortIcon field="platform_name" /></div>
+                                    <div className="flex items-center">플랫폼 <SortIcon field="platform_name" /></div>
                                     <Resizer col="platform" />
                                 </th>
                                 <th style={{ width: colWidths.product }} onClick={() => handleSort('product_name')} className="px-4 py-4 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-100 relative group">
-                                    <div className="flex items-center">Product <SortIcon field="product_name" /></div>
+                                    <div className="flex items-center">상품명 <SortIcon field="product_name" /></div>
                                     <Resizer col="product" />
                                 </th>
-                                <th style={{ width: colWidths.option }} className="px-4 py-4 border-b border-r border-slate-100 relative">Option <Resizer col="option" /></th>
+                                <th style={{ width: colWidths.option }} className="px-4 py-4 border-b border-r border-slate-100 relative">옵션 <Resizer col="option" /></th>
                                 <th style={{ width: colWidths.kit }} onClick={() => handleSort('matched_kit_id')} className="px-4 py-4 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-100 relative group">
-                                    <div className="flex items-center">Kit <SortIcon field="matched_kit_id" /></div>
+                                    <div className="flex items-center">키트 <SortIcon field="matched_kit_id" /></div>
                                     <Resizer col="kit" />
                                 </th>
                                 <th style={{ width: colWidths.qty }} onClick={() => handleSort('qty')} className="px-4 py-4 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-100 relative group">
-                                    <div className="flex items-center">Qty <SortIcon field="qty" /></div>
+                                    <div className="flex items-center">수량 <SortIcon field="qty" /></div>
                                     <Resizer col="qty" />
                                 </th>
                                 <th style={{ width: colWidths.ordered_at }} onClick={() => handleSort('ordered_at')} className="px-4 py-4 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-100 relative group">
-                                    <div className="flex items-center">Ordered At <SortIcon field="ordered_at" /></div>
+                                    <div className="flex items-center">주문일시 <SortIcon field="ordered_at" /></div>
                                     <Resizer col="ordered_at" />
                                 </th>
                                 <th style={{ width: colWidths.paid_at }} onClick={() => handleSort('paid_at')} className="px-4 py-4 cursor-pointer hover:bg-slate-100 border-b border-r border-slate-100 relative group">
-                                    <div className="flex items-center">Paid At <SortIcon field="paid_at" /></div>
+                                    <div className="flex items-center">결제일시 <SortIcon field="paid_at" /></div>
                                     <Resizer col="paid_at" />
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
                             {initialOrders.length === 0 ? (
-                                <tr><td colSpan={8} className="px-6 py-16 text-center text-muted-foreground">No new orders found.</td></tr>
+                                <tr><td colSpan={8} className="px-6 py-16 text-center text-muted-foreground">신규 주문이 없습니다.</td></tr>
                             ) : (
                                 initialOrders.map((row) => {
                                     // Highlight Logic: If no matched_kit_id, show Amber/Red row
@@ -442,7 +464,7 @@ export function ProcessingTable({
                                                         onClick={(e) => openKitEditor(e, row)}
                                                     >
                                                         <div className="flex items-center justify-between">
-                                                            <span>{row.matched_kit_id || <span className="text-destructive font-extrabold">Select Kit...</span>}</span>
+                                                            <span>{row.matched_kit_id || <span className="text-destructive font-extrabold">키트 선택...</span>}</span>
                                                             <ChevronsUpDown size={12} className="text-muted-foreground opacity-0 group-hover:opacity-100" />
                                                         </div>
                                                     </td>
@@ -477,7 +499,7 @@ export function ProcessingTable({
                     <div className="p-2 border-b border-border bg-muted/50 space-y-2">
                         {editingKit.optionText && (
                             <div className="text-xs text-muted-foreground bg-background border border-border p-1.5 rounded break-all max-h-16 overflow-y-auto">
-                                <span className="font-bold text-muted-foreground block mb-0.5" style={{ fontSize: '0.65rem' }}>OPTION:</span>
+                                <span className="font-bold text-muted-foreground block mb-0.5" style={{ fontSize: '0.65rem' }}>옵션명:</span>
                                 {editingKit.optionText}
                             </div>
                         )}
@@ -486,7 +508,7 @@ export function ProcessingTable({
                             <input
                                 autoFocus
                                 type="text"
-                                placeholder="Search Kit ID..."
+                                placeholder="키트 ID 검색..."
                                 className="w-full pl-8 pr-2 py-2 text-sm border border-border rounded-md focus:ring-2 focus:ring-ring outline-none bg-background text-foreground"
                                 value={kitSearchQuery}
                                 onChange={(e) => setKitSearchQuery(e.target.value)}
@@ -514,7 +536,7 @@ export function ProcessingTable({
                             </div>
                         ) : (
                             <div className="p-4 text-center text-xs text-muted-foreground">
-                                {kitSearchQuery ? "No matches. Use buttons below to assign." : "Type to search..."}
+                                {kitSearchQuery ? "결과 없음. 아래 버튼으로 할당." : "검색어 입력..."}
                             </div>
                         )}
                     </div>
@@ -526,14 +548,14 @@ export function ProcessingTable({
                             onClick={() => handleApplyKit(false)}
                             className="w-full flex items-center justify-center gap-2 bg-background border border-border hover:border-primary hover:text-primary text-foreground py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <Check size={14} /> Only This Order
+                            <Check size={14} /> 이 주문만 적용
                         </button>
                         <button
                             disabled={!kitSearchQuery || !editingKit.optionText}
                             onClick={() => handleApplyKit(true)}
                             className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <Plus size={14} /> Apply &amp; Save Rule
+                            <Plus size={14} /> 적용 및 매핑 규칙 저장
                         </button>
                     </div>
                 </div>
@@ -541,18 +563,18 @@ export function ProcessingTable({
 
             {/* Pagination */}
             <div className="flex justify-between items-center text-sm text-muted-foreground px-2">
-                <div>Showing <span className="font-bold text-foreground">{Math.min(initialOrders.length, 50)}</span> of <span className="font-bold text-foreground">{totalCount}</span> orders</div>
+                <div>총 <span className="font-bold text-foreground">{totalCount}</span>건 중 <span className="font-bold text-foreground">{Math.min(initialOrders.length, 50)}</span>건 표시</div>
                 <div className="flex gap-2">
                     <button disabled={currentPage <= 1} onClick={() => {
                         const params = new URLSearchParams(searchParams.toString())
                         params.set('page', (currentPage - 1).toString())
                         router.push(`/orders/process?${params.toString()}`)
-                    }} className="px-4 py-2 border rounded hover:bg-white bg-white/50 disabled:opacity-50">Prev</button>
+                    }} className="px-4 py-2 border rounded hover:bg-white bg-white/50 disabled:opacity-50">이전</button>
                     <button disabled={initialOrders.length < 50} onClick={() => {
                         const params = new URLSearchParams(searchParams.toString())
                         params.set('page', (currentPage + 1).toString())
                         router.push(`/orders/process?${params.toString()}`)
-                    }} className="px-4 py-2 border rounded hover:bg-white bg-white/50 disabled:opacity-50">Next</button>
+                    }} className="px-4 py-2 border rounded hover:bg-white bg-white/50 disabled:opacity-50">다음</button>
                 </div>
             </div>
         </div>

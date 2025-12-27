@@ -27,22 +27,22 @@ const navGroups = [
     {
         label: 'Commerce Operation',
         items: [
-            { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-            { name: 'Promotion Rules', href: '/promotions', icon: ScrollText },
-            { name: 'New Orders', href: '/orders/process', icon: PackageCheck },
-            { name: 'Apply Gifts', href: '/promotions/apply', icon: Gift },
-            { name: 'All Orders', href: '/orders', icon: List },
-            { name: 'BOM Kits', href: '/inventory/boms', icon: Boxes },
-            { name: 'Products (ERP)', href: '/inventory/products', icon: Package },
-            { name: 'Mappings', href: '/inventory/mappings', icon: Link2 },
-            { name: 'Dispatch', href: '/orders/dispatch', icon: Truck },
+            { name: '대시보드', href: '/', icon: LayoutDashboard },
+            { name: '프로모션 관리', href: '/promotions', icon: ScrollText },
+            { name: '신규 주문', href: '/orders/process', icon: PackageCheck },
+            { name: '옵션명 정리', href: '/inventory/mappings', icon: Link2 },
+            { name: '사은품 지정', href: '/promotions/apply', icon: Gift },
+            { name: '모든 주문', href: '/orders', icon: List },
+            { name: '품목코드 매칭', href: '/inventory/boms', icon: Boxes },
+            { name: 'ERP 재고', href: '/inventory/products', icon: Package },
+            { name: '출고 현황', href: '/orders/dispatch', icon: Truck },
             { name: 'User Guide', href: '/guide', icon: HelpCircle },
         ]
     },
     {
         label: 'Strategy & Analysis',
         items: [
-            { name: 'AI Strategy Room', href: '/strategy', icon: Sparkles },
+
             { name: 'Sales Overview', href: '/sales/overview', icon: TrendingUp },
             { name: 'Sales Data', href: '/sales/manage', icon: Database },
             { name: 'Promotion Report', href: '/promotions/report', icon: FileBarChart },

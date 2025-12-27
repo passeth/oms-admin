@@ -52,26 +52,20 @@ export interface TopProduct {
     revenue?: number
 }
 
-const PLATFORM_MAPPING: Record<string, string> = {
-    '마트스토어': '스마트스토어',
-    'GS이': 'GS이숍',
-    '카오 톡스토어': '카카오 톡스토어',
-    '팡(신)': '쿠팡(신)',
-    '쿠팡': '쿠팡(신)',
-    'cafe24': '카페24(신)'
+
+// function normalizePlatform(name: string): string {
+//     return name || 'Unknown'
+// }
+
+// User requested to disable normalization
+function normalizePlatform(name: string): string {
+    return name || 'Unknown'
 }
 
-function normalizePlatform(name: string): string {
-    if (!name) return 'Unknown'
-    // Check direct mapping
-    if (PLATFORM_MAPPING[name]) return PLATFORM_MAPPING[name]
-    // Heuristic: Remove encoding garbage if possible or consolidate
-    if (name.includes('톡스토어')) return '카카오 톡스토어'
-    if (name.includes('스마트스토어')) return '스마트스토어'
-    return name
-}
+import { revalidatePath } from 'next/cache'
 
 export async function getDashboardStats() {
+    revalidatePath('/', 'page') // Force refresh cache
     const supabase = await createClient()
     const now = new Date()
     const startOfCurrentMonth = startOfMonth(now)
@@ -172,57 +166,32 @@ export async function getDashboardStats() {
         qty: Number(r.total_qty)
     })) || []
 
-    // 6. Fetch Detailed Platform Metrics (RPC)
-    // Force KST (UTC+9) for Today String ensures server timezone doesn't shift the date
-    const kstOffset = 9 * 60 * 60 * 1000
-    // Use the raw timestamp, add offset, creating a new Date object that represents KST 'wall clock' time in UTC fields
-    const nowKst = new Date(new Date().getTime() + kstOffset)
+    // 6. Platform Pulse Logic (Derived from Performance Rows for Consistency)
+    // User confirmed 'performanceRows' (Total Deliveries) logic is correct.
+    // So we reuse that data instead of calling a separate RPC.
 
-    const todayStr = nowKst.toISOString().split('T')[0]
-    const thisMonthPrefix = todayStr.substring(0, 7)
+    // performanceRows is already sorted by month1 DESC (Current Month)
+    const platformCards: PlatformCardData[] = performanceRows.map(row => {
+        const thisMonth = row.month1
+        const lastMonth = row.month2
 
-    // For last month, subtact month from KST date
-    const lastMonthDate = new Date(nowKst)
-    lastMonthDate.setMonth(lastMonthDate.getMonth() - 1)
-    const lastMonthPrefix = lastMonthDate.toISOString().substring(0, 7)
+        let growth = 0
+        if (lastMonth > 0) {
+            growth = ((thisMonth - lastMonth) / lastMonth) * 100
+        } else if (thisMonth > 0) {
+            growth = 100
+        }
 
-    const { data: platformDetails, error: platformError } = await supabase.rpc('get_platform_performance_summary', {
-        p_today_str: todayStr,
-        p_this_month_prefix: thisMonthPrefix,
-        p_last_month_prefix: lastMonthPrefix
+        return {
+            name: row.platform,
+            today: 0,
+            month: thisMonth,
+            lastMonth: lastMonth,
+            growth
+        }
     })
 
-    if (platformError) console.error('Platform RPC Error', platformError)
-
-    // Merge and Normalize
-    const normalizedDetails = new Map<string, { today: number, month: number, last: number }>()
-
-    platformDetails?.forEach((d: any) => {
-        const rawP = d.platform_name || 'Unknown'
-        const p = normalizePlatform(rawP)
-        const current = normalizedDetails.get(p) || { today: 0, month: 0, last: 0 }
-
-        current.today += Number(d.today_count)
-        current.month += Number(d.this_month_count)
-        current.last += Number(d.last_month_count)
-
-        normalizedDetails.set(p, current)
-    })
-
-    const platformCards: PlatformCardData[] = Array.from(normalizedDetails.entries())
-        .map(([name, stats]) => {
-            const growth = stats.last > 0 ? ((stats.month - stats.last) / stats.last) * 100 : 0
-            return {
-                name,
-                today: stats.today,
-                month: stats.month,
-                lastMonth: stats.last,
-                growth
-            }
-        })
-        .sort((a, b) => b.month - a.month)
-
-    const totalToday = platformCards.reduce((sum, p) => sum + p.today, 0)
+    const totalToday = 0 // Not used
 
     return {
         performanceRows,

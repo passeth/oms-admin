@@ -22,7 +22,7 @@ export async function getLatestUploadOrders(
     let query = supabase
         .from('cm_raw_order_lines')
         .select('*', { count: 'exact' as any })
-        .is('process_status', null)
+        .or('process_status.is.null,process_status.eq.GIFT_APPLIED')
 
     if (search) {
         query = query.or(`receiver_name.ilike.%${search}%,site_order_no.ilike.%${search}%,product_name.ilike.%${search}%`)
@@ -63,7 +63,7 @@ export async function exportOrdersForExcel() {
     const { data, error } = await supabase
         .from('cm_raw_order_lines')
         .select('*')
-        .is('process_status', null)
+        .or('process_status.is.null,process_status.eq.GIFT_APPLIED')
         .order('id', { ascending: true })
 
     if (error) {

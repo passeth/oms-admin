@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { format, startOfMonth, startOfWeek, endOfMonth, endOfWeek, eachDayOfInterval, isSameDay, subMonths, addMonths } from 'date-fns'
+import { format, startOfMonth, startOfWeek, endOfMonth, endOfWeek, eachDayOfInterval, isSameDay, subMonths, addMonths, addWeeks, subWeeks } from 'date-fns'
 import { PromoRule } from '@/types/database'
 
 interface CalendarViewProps {
@@ -25,11 +25,11 @@ export function CalendarView({ rules, stats, mode = 'month', onEdit, isReadOnly 
         return rules.filter(r => {
             const start = new Date(r.start_date)
             const end = new Date(r.end_date)
-            const d = new Date(date)
-            d.setHours(0, 0, 0, 0)
-            start.setHours(0, 0, 0, 0)
-            end.setHours(23, 59, 59, 999)
-            return d >= start && d <= end
+            // Fix timezone offset issues by comparing YYYY-MM-DD strings
+            const dStr = format(date, 'yyyy-MM-dd')
+            const rStart = r.start_date
+            const rEnd = r.end_date
+            return dStr >= rStart && dStr <= rEnd
         })
     }
 
@@ -47,9 +47,24 @@ export function CalendarView({ rules, stats, mode = 'month', onEdit, isReadOnly 
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-black tracking-tight">{format(currentDate, 'MMMM yyyy')}</h2>
                 <div className="flex gap-2">
-                    <button onClick={() => setCurrentDate(prev => mode === 'month' ? subMonths(prev, 1) : new Date(prev.setDate(prev.getDate() - 7)))} className="px-3 py-1 text-sm font-bold border border-border rounded-lg hover:bg-muted transition-colors">Prev</button>
-                    <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1 text-sm font-bold border border-border rounded-lg hover:bg-muted transition-colors">Today</button>
-                    <button onClick={() => setCurrentDate(prev => mode === 'month' ? addMonths(prev, 1) : new Date(prev.setDate(prev.getDate() + 7)))} className="px-3 py-1 text-sm font-bold border border-border rounded-lg hover:bg-muted transition-colors">Next</button>
+                    <button
+                        onClick={() => setCurrentDate(prev => mode === 'month' ? subMonths(prev, 1) : subWeeks(prev, 1))}
+                        className="px-3 py-1 text-sm font-bold border border-border rounded-lg hover:bg-muted transition-colors"
+                    >
+                        Prev
+                    </button>
+                    <button
+                        onClick={() => setCurrentDate(new Date())}
+                        className="px-3 py-1 text-sm font-bold border border-border rounded-lg hover:bg-muted transition-colors"
+                    >
+                        Today
+                    </button>
+                    <button
+                        onClick={() => setCurrentDate(prev => mode === 'month' ? addMonths(prev, 1) : addWeeks(prev, 1))}
+                        className="px-3 py-1 text-sm font-bold border border-border rounded-lg hover:bg-muted transition-colors"
+                    >
+                        Next
+                    </button>
                 </div>
             </div>
 
@@ -67,10 +82,9 @@ export function CalendarView({ rules, stats, mode = 'month', onEdit, isReadOnly 
                     const dateStr = format(day, 'yyyy-MM-dd')
 
                     return (
-
-                        <div key={day.toISOString()} className={`bg-card min-h-[140px] md:min-h-[160px] h-auto p-2 flex flex-col gap-2 hover:bg-muted/30 transition-colors ${isOutside ? 'opacity-40 bg-muted/50' : ''}`}>
+                        <div key={day.toISOString()} className={`min-h-[140px] md:min-h-[160px] h-auto p-2 flex flex-col gap-2 transition-colors bg-card`}>
                             <div className="flex justify-between items-start">
-                                <div className={`text-xs font-bold mb-1 w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground'}`}>
+                                <div className={`text-xs font-bold mb-1 w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-primary text-primary-foreground shadow-sm' : isOutside ? 'text-muted-foreground opacity-50' : 'text-muted-foreground'}`}>
                                     {format(day, 'd')}
                                 </div>
                             </div>
@@ -91,29 +105,29 @@ export function CalendarView({ rules, stats, mode = 'month', onEdit, isReadOnly 
                                             disabled={isReadOnly && !onEdit}
                                             onClick={() => onEdit && onEdit(rule)}
                                             className={`
-                                                text-left px-2 py-2 rounded border border-border shadow-sm w-full group transition-all
-                                                bg-card hover:bg-accent hover:border-sidebar-ring hover:shadow-md
+                                                text-left px-2 py-2 rounded border shadow-sm w-full group transition-all
+                                                bg-card border-border text-foreground hover:bg-background hover:border-primary/50 hover:shadow-md
                                                 border-l-4 ${borderColor}
                                                 ${!onEdit && isReadOnly ? 'cursor-default' : ''}
                                             `}
                                         >
-                                            <div className="text-[11px] font-bold text-foreground leading-tight break-words group-hover:text-accent-foreground">
+                                            <div className={`text-[11px] font-bold leading-tight break-words ${isOutside ? '' : 'group-hover:text-accent-foreground'}`}>
                                                 {rule.platform_name && <span className="text-[9px] text-muted-foreground uppercase mr-1 font-extrabold flex items-center gap-1">
-                                                    {isStartDay && <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />}
+                                                    {isStartDay && <span className={`w-1.5 h-1.5 rounded-full inline-block ${isOutside ? 'bg-primary/50' : 'bg-primary'}`} />}
                                                     [{rule.platform_name}]
                                                 </span>}
                                                 {rule.promo_name}
                                             </div>
 
                                             {/* Sales Stats Display */}
-                                            <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-border/50">
+                                            <div className={`flex items-center justify-between mt-1.5 pt-1.5 border-t ${isOutside ? 'border-border/30' : 'border-border/50'}`}>
                                                 <div className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                                    <span className="font-bold text-xs text-primary">{today}</span>
+                                                    <span className={`font-bold text-xs ${isOutside ? 'text-primary/60' : 'text-primary'}`}>{today}</span>
                                                     <span className="text-[9px] uppercase font-bold tracking-wide">today</span>
                                                 </div>
                                                 <div className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
                                                     <span className="text-[9px] uppercase font-bold">cum.</span>
-                                                    <span className="font-bold text-foreground">{total}</span>
+                                                    <span className={`font-bold ${isOutside ? 'text-foreground/60' : 'text-foreground'}`}>{total}</span>
                                                 </div>
                                             </div>
                                         </button>

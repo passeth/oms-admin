@@ -251,21 +251,25 @@ export async function applyGiftToTargets(
             const batchTargets = targets.slice(i, i + BATCH_SIZE)
 
             // 1. Prepare & Create Orders
-            const orderInserts = batchTargets.map(t => ({
-                site_order_no: `GIFT-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-                platform_name: t.platform_name || 'Unknown',
-                receiver_name: t.receiver_name,
-                receiver_phone1: t.receiver_phone,
-                receiver_phone2: t.receiver_phone2 || '',
-                receiver_addr: t.receiver_addr,
-                receiver_zip: t.receiver_zip || '',
-                product_name: t.gift_kit_id,
-                option_text: `*증정_${t.gift_kit_id}`,
-                qty: t.gift_qty,
-                matched_kit_id: t.gift_kit_id,
-                process_status: null,
-                upload_date: new Date().toISOString()
-            }))
+            const orderInserts = batchTargets.map(t => {
+                const uniqueId = `GIFT-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+                return {
+                    site_order_no: uniqueId,
+                    order_unique_code: uniqueId, // Essential for identification
+                    platform_name: t.platform_name || 'Unknown',
+                    receiver_name: t.receiver_name,
+                    receiver_phone1: t.receiver_phone,
+                    receiver_phone2: t.receiver_phone2 || '',
+                    receiver_addr: t.receiver_addr,
+                    receiver_zip: t.receiver_zip || '',
+                    product_name: t.gift_kit_id,
+                    option_text: `*증정_${t.gift_kit_id}`,
+                    qty: t.gift_qty,
+                    matched_kit_id: t.gift_kit_id,
+                    process_status: null,
+                    upload_date: new Date().toISOString()
+                }
+            })
 
             // Insert matching orders and get IDs
             const { data: createdOrders, error: orderError } = await supabase

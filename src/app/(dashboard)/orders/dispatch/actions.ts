@@ -43,21 +43,24 @@ export interface PlatformDispatchItem {
 }
 
 export async function getDispatchSummary(startDate: string, endDate: string) {
-    // Force cache revalidation to ensure fresh data
+    // Force cache revalidation
     revalidatePath('/orders/dispatch')
 
     const supabase = await createClient()
 
-    // STRICT: Filter by collected_at text pattern "YYYY-MM-DD%" as requested by user.
-    // We ignore upload_date completely because the dashboard is for checking shipment status by collected date.
-    // Example: "2025-12-05 오전 8:18:18" -> Matched by "2025-12-05%"
-    const searchDate = startDate.slice(0, 10)
+    // Date Range Logic (KST -> UTC)
+    // User input "2024-12-27" refers to KST 00:00 ~ 23:59
+    const targetDate = startDate.slice(0, 10)
+    const kstStart = new Date(`${targetDate}T00:00:00+09:00`)
+    const kstEnd = new Date(`${targetDate}T23:59:59.999+09:00`)
 
-    // 1. Fetch Orders in Range (Stripped of fallback logic)
+    // 1. Fetch Orders: process_status = 'DONE' AND upload_date in range
     const { data: orders, error: orderError } = await supabase
         .from('cm_raw_order_lines')
-        .select('matched_kit_id, qty, platform_name, receiver_name, receiver_addr, receiver_phone1, collected_at')
-        .ilike('collected_at', `${searchDate}%`)
+        .select('matched_kit_id, qty, platform_name, receiver_name, receiver_addr, receiver_phone1, upload_date')
+        .eq('process_status', 'DONE')
+        .gte('upload_date', kstStart.toISOString())
+        .lte('upload_date', kstEnd.toISOString())
         .not('matched_kit_id', 'is', null)
 
     if (orderError) return { error: orderError.message }
@@ -81,7 +84,7 @@ export async function getDispatchSummary(startDate: string, endDate: string) {
 
     const byProduct = new Map<string, number>()
     const byPlatform = new Map<string, typeof byProduct>()
-    const uniqueDispatches = new Set<string>() // Shipment Count
+    const uniqueDispatches = new Set<string>()
     let bomMissingCount = 0
 
     orders?.forEach((order: any) => {
@@ -90,13 +93,11 @@ export async function getDispatchSummary(startDate: string, endDate: string) {
 
         const components = bomMap.get(kitId) || []
 
-        // Skip aggregates if no BOM (Picking Qty = 0)
         if (components.length === 0) {
             bomMissingCount++
             return
         }
 
-        // Unique Shipment Count Logic
         const uniqueKey = `${order.receiver_name || ''}|${order.receiver_addr || ''}|${order.receiver_phone1 || ''}`
         if (uniqueKey.length > 2) {
             uniqueDispatches.add(uniqueKey)
@@ -146,18 +147,20 @@ export async function getDispatchSummary(startDate: string, endDate: string) {
     })
     platformList.sort((a, b) => a.platform_name.localeCompare(b.platform_name) || a.product_name.localeCompare(b.product_name))
 
-    // Debug: Check total raw orders regardless of matching (using collected_at)
-    const { count: totalRaw } = await supabase
+    // Debug: Check total DONE orders
+    const { count: totalDone } = await supabase
         .from('cm_raw_order_lines')
         .select('*', { count: 'exact', head: true })
-        .ilike('collected_at', `${searchDate}%`)
+        .eq('process_status', 'DONE')
+        .gte('upload_date', kstStart.toISOString())
+        .lte('upload_date', kstEnd.toISOString())
 
     return {
         summary: summaryList,
         byPlatform: platformList,
         orderCount: uniqueDispatches.size,
         debug: {
-            totalRawOrders: totalRaw || 0,
+            totalRawOrders: totalDone || 0,
             matchedOrders: orders?.length || 0,
             bomEntries: boms?.length || 0,
             bomMissingOrders: bomMissingCount
@@ -169,34 +172,38 @@ export async function getDispatchSummary(startDate: string, endDate: string) {
 export interface EcountDispatchRow {
     date: string
     seq: number
-    account_code: string // 거래처코드
-    account_name: string // 거래처명 (Empty)
-    pic_code: string     // 담당자
-    warehouse_code: string // 출하창고
-    type_code: string    // 거래유형
-    currency: string     // 통화 (default '14' or empty?) -> User example: 14 is type, currency empty
+    account_code: string
+    account_name: string
+    pic_code: string
+    warehouse_code: string
+    type_code: string
+    currency: string
     exchange_rate: string
-    product_code: string // 품목코드
-    product_name: string // 품목명
-    spec: string         // 규격
-    qty: number          // 수량
-    unit_price: string   // 단가 (Empty)
-    foreign_amount: string // 외화금액
-    supply_amount: string // 공급가액
-    vat: string          // 부가세
-    remarks: string      // 적요 (Platform Name)
-    prod_creation: string // 생산전표생성
+    product_code: string
+    product_name: string
+    spec: string
+    qty: number
+    unit_price: string
+    foreign_amount: string
+    supply_amount: string
+    vat: string
+    remarks: string
+    prod_creation: string
 }
 
 export async function getEcountDispatchData(targetDate: string) {
     const supabase = await createClient()
+
+    // Date Logic
+    const kstStart = new Date(`${targetDate}T00:00:00+09:00`)
+    const kstEnd = new Date(`${targetDate}T23:59:59.999+09:00`)
 
     // 1. Fetch Platform Info
     const { data: platforms } = await supabase.from('cm_sales_platforms').select('*')
     const platformMap = new Map<string, any>()
     platforms?.forEach((p: any) => platformMap.set(p.platform_name, p))
 
-    // 2. Fetch All BOMs (Loop)
+    // 2. Fetch All BOMs
     const boms = await fetchAll(supabase, 'cm_kit_bom_items', '*')
 
     const bomMap = new Map<string, { product_id: string, multiplier: number }[]>()
@@ -206,18 +213,19 @@ export async function getEcountDispatchData(targetDate: string) {
         bomMap.set(b.kit_id, list)
     })
 
-    // 3. Fetch All Products (Loop)
+    // 3. Fetch All Products
     const products = await fetchAll(supabase, 'cm_erp_products', 'product_id, name, spec, warehouse_code')
 
     const productInfo = new Map<string, any>()
     products?.forEach((p: any) => productInfo.set(p.product_id, p))
 
-    // 4. Fetch Orders (Strictly collected_at)
-    // No fallback to upload_date.
+    // 4. Fetch Orders: process_status='DONE' AND upload_date in KST range
     const { data: orders, error } = await supabase
         .from('cm_raw_order_lines')
-        .select('platform_name, matched_kit_id, qty, collected_at')
-        .ilike('collected_at', `${targetDate}%`)
+        .select('platform_name, matched_kit_id, qty, upload_date')
+        .eq('process_status', 'DONE')
+        .gte('upload_date', kstStart.toISOString())
+        .lte('upload_date', kstEnd.toISOString())
         .not('matched_kit_id', 'is', null)
 
     if (error) {

@@ -65,7 +65,7 @@ export async function getBomItems() {
             const { data, error } = await supabase
                 .from('cm_raw_order_lines')
                 .select('matched_kit_id')
-                .neq('process_status', 'DONE')
+                .or('process_status.neq.DONE,process_status.is.null')
                 .not('matched_kit_id', 'is', null)
                 .range(from, from + step - 1)
 
